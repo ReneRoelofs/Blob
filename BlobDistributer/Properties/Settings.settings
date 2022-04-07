@@ -1,0 +1,21 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="BlobDistributer.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="TestProd" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Prod</Value>
+    </Setting>
+    <Setting Name="DetailedLogging" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="DetailedLoggingFilter" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">/1111</Value>
+    </Setting>
+    <Setting Name="DetailedLoggingFilterComment" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">een puntkomma gescheiden lijst van fragementen die in een blobnaam moeten voorkomen wil deze gelogd worden. Als deze leeg is worden alle blob-moves geloged hetgeen een extreme impact op de performance heeft. Goed voorbeeld /9601;/1111 voor voertuigen of _2234275_ voor filter op pilotfish vehiclegateway</Value>
+    </Setting>
+    <Setting Name="DelayWhenNothingFound" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">45</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
