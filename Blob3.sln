@@ -5,13 +5,13 @@ VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContinentalBlob", "Blob3\ContinentalBlob.csproj", "{AF3EF9F9-4099-4387-AE0F-4139FCA2D1A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FmsBlobToContinental", "..\ContinentalTirePressure\FmsBlobToContinental\FmsBlobToContinental.csproj", "{70276DBE-6967-4D4C-8CC7-1882C76D78A3}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlobHandler", "BlobHander3\BlobHandler.csproj", "{3B1BBC61-200C-46C1-8F73-5428AC3231F0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlobTester", "BlobTester2\BlobTester.csproj", "{6FDD4428-3A4C-4B22-912B-CE46F9C1DD29}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlobDistributer", "BlobDistributer\BlobDistributer.csproj", "{088FAC98-1C96-4188-81E4-445B2140A0A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FmsBlobToContinental", "FmsBlobToContinental\FmsBlobToContinental.csproj", "{70276DBE-6967-4D4C-8CC7-1882C76D78A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,6 @@ Global
 		{AF3EF9F9-4099-4387-AE0F-4139FCA2D1A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF3EF9F9-4099-4387-AE0F-4139FCA2D1A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF3EF9F9-4099-4387-AE0F-4139FCA2D1A5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3B1BBC61-200C-46C1-8F73-5428AC3231F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3B1BBC61-200C-46C1-8F73-5428AC3231F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B1BBC61-200C-46C1-8F73-5428AC3231F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -39,6 +35,10 @@ Global
 		{088FAC98-1C96-4188-81E4-445B2140A0A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{088FAC98-1C96-4188-81E4-445B2140A0A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{088FAC98-1C96-4188-81E4-445B2140A0A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

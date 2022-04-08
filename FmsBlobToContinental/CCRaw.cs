@@ -10,7 +10,7 @@ namespace FmsBlobToContinental
 {
     public class CCRaw
     {
-        string file = @"C:\klanten\arriva\continentaltirepressure\data\9725.txt";
+        string file = @"C:\klanten\arriva\blob3\data\9725.txt";
         public CCVehicle vehicle;
 
         public CCRaw(CCVehicle vehicle, string file = null)

@@ -73,7 +73,7 @@ namespace FmsBlobToContinental.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Klanten\\Arriva\\ContinentalTirePressure\\Data")]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Klanten\\Arriva\\Blob3\\Data")]
         public string DataDir {
             get {
                 return ((string)(this["DataDir"]));
