@@ -2,6 +2,7 @@
 using Azure.Storage.Blobs.Models;
 using BlobHandler;
 using FmsBlobToContinental;
+using RestSharp;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ namespace Blob3
         [XmlIgnore]
         private ConcurrentQueue<Payload> payloadQueue = new ConcurrentQueue<Payload>();
 
-        private ConcurrentQueue<BlobItem> blobItemQueue = new ConcurrentQueue<BlobItem>();
+        private ConcurrentQueue<BlobItem> blobItemQueue = new ConcurrentQueue<BlobItem>(); // the main queue of incoming blobs, handled one by one. in DownloadBlobItem
         public Boolean useTimestampNow;
         public BlobContainerClient containerClient;
         [XmlIgnore]
@@ -131,11 +132,14 @@ namespace Blob3
                             //--- to be sure the last one is realy in position 0 lock the stack first 
                             //--- so it cannot be read in the SendPayloadToContinental where the first one is handled 
                             //-
+                            //  log.InfoFormat("Veh={0,4} Send significant changed from blob {1}", vehicleNumber, blobItem.Name);
                             foreach (Payload payload in payloadList)
                             {
                                 payload.vehicle = vehicle;
-                                EnqueuePayload(payload);
+                                UpdateSensorDataListViaPayload(payload);
                             }
+                            //   log.InfoFormat("Veh={0,4} Send timeout date from blob {1}", vehicleNumber, blobItem.Name);
+                            SendAllSensorForTimeout();
                         }
                     }
                     catch (Exception ex)
@@ -174,6 +178,92 @@ namespace Blob3
                 }
             }
             return result;
+        }
+
+
+        /// <summary>
+        /// Nieuwe routine!
+        /// Udpdate all sensordata and send directly if something important changed.
+        /// </summary>
+        private Boolean UpdateSensorDataListViaPayload(Payload payLoad)
+        {
+            Boolean SendResult = payLoad.SendMasterDataToContinental(useTimestampNow);
+            if (!SendResult)
+            {
+                //+
+                //--- sending went wrong, flush the rest.
+                log.DebugFormat("{0}: SendToMasterdataToContinental failed.. flush the blobQueue for this vehiucle", this.vehicleNumber);
+                FlushBlobQueue();
+                FlushPayLoadQueue();
+                return false;
+            }
+            //+
+            //--- inv: Masterdata for this vehicle is ok.
+            //---      now get the sensordata
+            //-
+            List<SensorData> sensorsInThisPayload;
+            Boolean XGetListResult = payLoad.GetSensorsList(useTimestampNow, out sensorsInThisPayload);
+            //+
+            //--- send any new or alarm (significatnChange) data directly to Continental, but wait for the TIMEOUT records.
+            //---
+            //-
+            foreach (SensorData newSensorData in sensorsInThisPayload)
+            {
+                SensorData sensorDataInVehicle = this.sensorDataList.Find(S => S.location == newSensorData.location);
+                newSensorData.CopyDataFromPrev(sensorDataInVehicle);
+
+                if (useTimestampNow)
+                {
+                    newSensorData.why = "TIMENOW";
+                }
+                if (sensorDataInVehicle == null)
+                {
+                    newSensorData.why = "NEW";
+                    newSensorData.doSendData = true;
+                }
+                if (sensorDataInVehicle != null)
+                {
+                    if (newSensorData.SignificantChange(sensorDataInVehicle, out newSensorData.why))
+                    {
+                        // log.DebugFormat("NEW {1} {0}", sensorData.Text(),why);
+                        // log.DebugFormat("OLD {1} {0}", prevSend.Text(),why);
+                        newSensorData.doSendData = true;
+                    }
+                }
+                //+
+                //--- als er iets belangrijks gebeurd is, dan sturen we de data direct.
+                //-
+                if (newSensorData.doSendData)
+                {
+                    SendSensorDataToContinental(newSensorData, useTimestampNow);
+                    Statics.ReplaceSensorInList(sensorDataInVehicle, newSensorData);
+                }
+                //+
+                //--- replace sensorDataList with this one.
+                //-
+                if (sensorDataInVehicle != null)
+                {
+                    this.sensorDataList.Remove(sensorDataInVehicle);
+                }
+                this.sensorDataList.Add(newSensorData);
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Nieuwe routine!
+        /// Update all sensordata via timeout. Called Once after each blob has been processed completely.
+        /// </summary>
+        private void SendAllSensorForTimeout()
+        {
+            foreach (SensorData sensorData in this.sensorDataList)
+            {
+                if (sensorData.timestampUploaded.AddMinutes(Statics.MinutesForIgnoreSensorDataAfterDeserializing) < sensorData.timestamp)
+                {
+                    sensorData.why = "TIME";
+                    SendSensorDataToContinental(sensorData, useTimestampNow);
+                }
+            }
         }
 
 
@@ -248,6 +338,72 @@ namespace Blob3
                 FlushBlobQueue();
                 FlushPayLoadQueue();
             }
+        }
+
+
+        private Boolean SendSensorDataToContinental(SensorData sensorData, Boolean useTimeStampNow)
+        {
+            var request = new CCRestRequest(Method.PUT, this.testProd);
+            RestClient client = new CCRestClient(this.testProd, "sensorad/sensors/" + sensorData.sid);
+            // update timestamp for debugging  sensorData.setTimestamp(DateTime.Now);
+            if (useTimeStampNow)
+            {
+                sensorData.setTimestamp(DateTime.Now);
+            }
+
+            //+
+            //--- Do send the updated sensordata to continental
+            //-
+            string sJson = sensorData.Json();
+            request.SetBody(sJson);
+            IRestResponse response = client.Execute(request);
+
+            //+
+            //--- ook als het mislukt is updaten we toch de timestamp van deze sensor anders blijven we aan de gang
+            //-
+            sensorData.timestampUploaded = sensorData.timestamp;
+
+            if (response.IsSuccessful)
+            {
+                this.UpdateSimpleInfo(sensorData.location, sensorData.sidHex, sensorData.timestamp, sensorData.temperature, sensorData.pressure);
+                log.InfoFormat("Veh={0,4} Loc={1,2} Why={2,4} Time={3} Url={4} Status={5} ",
+                    this.vehicleNumber,
+                    sensorData.location,
+                    sensorData.why,
+                    sensorData.timestamp,
+                    client.BaseUrl,
+                    response.StatusCode);
+                if (Statics.DetailedContiLogging)
+                {
+                    log.DebugFormat("                Json={0}",
+                        sJson.Replace("\r\n", ""));
+                    log.DebugFormat("                Text={0}",
+                        sensorData.Text());
+                }
+            }
+            else // Not Response.IsSuccesfull // more feedback and no sensorupdate
+            {
+                log.WarnFormat("Veh={0,4} Loc={1,2} Why={2,4} Time={3} Url={4} SensorHex={5} Status={6} Response={7}",
+                    this.vehicleNumber,
+                    sensorData.location,
+                    sensorData.why,
+                    sensorData.timestamp,
+                    client.BaseUrl,
+                    sensorData.sidHex,
+                    response.StatusCode,
+                    response.Content);
+                if (Statics.DetailedContiLogging)
+                {
+                    log.DebugFormat("                Json={0}",
+                        sJson.Replace("\r\n", ""));
+                    log.DebugFormat("                Text={0}",
+                        sensorData.Text());
+                    //FeedbackResponse(client, response);
+                }
+
+            }
+            return response.IsSuccessful;
+
         }
 
         /// <summary>

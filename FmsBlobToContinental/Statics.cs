@@ -137,9 +137,13 @@ resultTask = httpClient->PostAsync(state->httpRequest, httpContent);
         {
             lock (MyLock)
             {
-                if (sensorDict.ContainsKey(oldOne.sid))
+                if (oldOne != null && sensorDict.ContainsKey(oldOne.sid))
                 {
                     sensorDict.Remove(oldOne.sid);
+                }
+                if (sensorDict.ContainsKey(newOne.sid))
+                {
+                    sensorDict.Remove(newOne.sid);
                 }
                 sensorDict.Add(newOne.sid, newOne);
             }

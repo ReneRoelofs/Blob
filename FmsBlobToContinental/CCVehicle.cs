@@ -57,6 +57,8 @@ namespace FmsBlobToContinental
         [XmlIgnore]
         public List<SensorMasterData> sensorsMasterDataList = new List<SensorMasterData>();
         [XmlIgnore]
+        public Boolean masterdataOk = true;
+        [XmlIgnore]
         public List<SensorData> sensorsDataList = new List<SensorData>();
         public TestProd testProd = TestProd.Test;
         public DateTime timestampSendToContinental { get; set; } = DateTime.MinValue;

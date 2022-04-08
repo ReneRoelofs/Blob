@@ -35,6 +35,17 @@ namespace FmsBlobToContinental
     public class SensorData : CCBaseData
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+
+
+        [JsonIgnore]
+        public Boolean doSendData = false; // should the sensordata be send to continental asap
+        [JsonIgnore]
+        public String why; // if true why?
+        [JsonIgnore]
+        public DateTime timestampUploaded { get; set; } // when whas is last uploaded.
+
+
         //+
         //--- every field with 3 or 4 letter abbreviations is the encoding
         //--- used to send (in JSON) to continental
@@ -239,6 +250,10 @@ namespace FmsBlobToContinental
 
         public void CopyDataFromPrev(SensorData Prev)
         {
+            if (Prev == null)
+            {
+                return;
+            }
 
             //+
             //--- kopieer alles van de voorgaande en zet de conditions opnieuw.
@@ -250,17 +265,11 @@ namespace FmsBlobToContinental
             this.tst = Prev.tst;
             this.pressure2 = Prev.pressure2;
             this.requiredPressure2 = Prev.requiredPressure2;
-
             this.SetConditionFromFC42(rawFC42);
             this.SetConditionFromFEF4(rawFEF4);
 
-            if (this.SignificantChange(Prev, out string why))
-            {
-                //log.DebugFormat(Prev.Text());
-                //log.DebugFormat(this.Text());
-                //log.DebugFormat("copy   {0}", why);
-                //int debug = 0;
-            }
+            this.timestampUploaded = Prev.timestampUploaded;
+
         }
 
 
@@ -394,9 +403,7 @@ namespace FmsBlobToContinental
             }
         }
 
-        [JsonIgnore]
-        public DateTime timestampUploaded { get; set; }
-
+      
     }
 
     public class TTMData

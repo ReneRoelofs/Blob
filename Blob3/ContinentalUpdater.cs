@@ -182,7 +182,7 @@ namespace Blob3
             {
                 Getterinfo = string.Format(" getting items started at {0:HH:mm:ss} elapsed {1} ", getterStartTime, RR.Lib.Elapsed(getterStopWatch));
             }
-            return string.Format("{0:HH:mm:ss} Send TirePressure to Continental : {1} blobitems, {2} PayloadItems in {3} vehiclequeues. {4}",
+            return string.Format("{0:HH:mm:ss} Send TirePressure to Continental : {1} blobitems, in {3} vehiclequeues. {4}",
                 DateTime.Now,
                 nItemsInQueues,
                 nPayloadsInQueues,

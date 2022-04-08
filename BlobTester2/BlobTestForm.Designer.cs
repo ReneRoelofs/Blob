@@ -96,6 +96,7 @@ namespace BlobTester
             this.dbgTireCondition = new System.Windows.Forms.ToolStripMenuItem();
             this.templateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.dbgSend = new System.Windows.Forms.ToolStripMenuItem();
+            this.templateSendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.gvPayload = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.gridView3 = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.bindingNavigator1 = new System.Windows.Forms.BindingNavigator(this.components);
@@ -137,7 +138,6 @@ namespace BlobTester
             this.bindingNavigatorMoveNextItem2 = new System.Windows.Forms.ToolStripButton();
             this.bindingNavigatorMoveLastItem2 = new System.Windows.Forms.ToolStripButton();
             this.bindingNavigatorSeparator7 = new System.Windows.Forms.ToolStripSeparator();
-            this.templateSendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.bsPayload)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bsBlobFiles)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bsBlobItems)).BeginInit();
@@ -253,17 +253,17 @@ namespace BlobTester
             // cbDistributeLoop
             // 
             this.cbDistributeLoop.AutoSize = true;
-            this.cbDistributeLoop.Location = new System.Drawing.Point(484, 96);
+            this.cbDistributeLoop.Location = new System.Drawing.Point(627, 77);
             this.cbDistributeLoop.Name = "cbDistributeLoop";
-            this.cbDistributeLoop.Size = new System.Drawing.Size(97, 17);
+            this.cbDistributeLoop.Size = new System.Drawing.Size(50, 17);
             this.cbDistributeLoop.TabIndex = 26;
-            this.cbDistributeLoop.Text = "Distribute Loop";
+            this.cbDistributeLoop.Text = "Loop";
             this.cbDistributeLoop.UseVisualStyleBackColor = true;
             // 
             // cbDetailedDistributeLogging
             // 
             this.cbDetailedDistributeLogging.AutoSize = true;
-            this.cbDetailedDistributeLogging.Location = new System.Drawing.Point(484, 77);
+            this.cbDetailedDistributeLogging.Location = new System.Drawing.Point(468, 77);
             this.cbDetailedDistributeLogging.Name = "cbDetailedDistributeLogging";
             this.cbDetailedDistributeLogging.Size = new System.Drawing.Size(153, 17);
             this.cbDetailedDistributeLogging.TabIndex = 25;
@@ -766,6 +766,7 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem1.AccessibleName = "Position";
             this.bindingNavigatorPositionItem1.AutoSize = false;
+            this.bindingNavigatorPositionItem1.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem1.Name = "bindingNavigatorPositionItem1";
             this.bindingNavigatorPositionItem1.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem1.Text = "0";
@@ -829,7 +830,7 @@ namespace BlobTester
             this.dbgTireCondition,
             this.dbgSend});
             this.menuStripPayload.Name = "menuStripPayload";
-            this.menuStripPayload.Size = new System.Drawing.Size(181, 70);
+            this.menuStripPayload.Size = new System.Drawing.Size(175, 48);
             this.menuStripPayload.Opened += new System.EventHandler(this.menuStripPayload_Opened);
             // 
             // dbgTireCondition
@@ -837,13 +838,13 @@ namespace BlobTester
             this.dbgTireCondition.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.templateToolStripMenuItem});
             this.dbgTireCondition.Name = "dbgTireCondition";
-            this.dbgTireCondition.Size = new System.Drawing.Size(180, 22);
+            this.dbgTireCondition.Size = new System.Drawing.Size(174, 22);
             this.dbgTireCondition.Text = "Debug ";
             // 
             // templateToolStripMenuItem
             // 
             this.templateToolStripMenuItem.Name = "templateToolStripMenuItem";
-            this.templateToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.templateToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
             this.templateToolStripMenuItem.Text = "Template";
             this.templateToolStripMenuItem.Click += new System.EventHandler(this.FEF4_Click);
             // 
@@ -852,8 +853,15 @@ namespace BlobTester
             this.dbgSend.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.templateSendToolStripMenuItem});
             this.dbgSend.Name = "dbgSend";
-            this.dbgSend.Size = new System.Drawing.Size(180, 22);
+            this.dbgSend.Size = new System.Drawing.Size(174, 22);
             this.dbgSend.Text = "SendToContinental";
+            // 
+            // templateSendToolStripMenuItem
+            // 
+            this.templateSendToolStripMenuItem.Name = "templateSendToolStripMenuItem";
+            this.templateSendToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
+            this.templateSendToolStripMenuItem.Text = "TemplateSend";
+            this.templateSendToolStripMenuItem.Click += new System.EventHandler(this.templateSendToolStripMenuItem_Click);
             // 
             // gvPayload
             // 
@@ -935,6 +943,7 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem.AccessibleName = "Position";
             this.bindingNavigatorPositionItem.AutoSize = false;
+            this.bindingNavigatorPositionItem.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem.Name = "bindingNavigatorPositionItem";
             this.bindingNavigatorPositionItem.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem.Text = "0";
@@ -1247,6 +1256,7 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem2.AccessibleName = "Position";
             this.bindingNavigatorPositionItem2.AutoSize = false;
+            this.bindingNavigatorPositionItem2.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem2.Name = "bindingNavigatorPositionItem2";
             this.bindingNavigatorPositionItem2.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem2.Text = "0";
@@ -1279,13 +1289,6 @@ namespace BlobTester
             // 
             this.bindingNavigatorSeparator7.Name = "bindingNavigatorSeparator7";
             this.bindingNavigatorSeparator7.Size = new System.Drawing.Size(6, 25);
-            // 
-            // templateSendToolStripMenuItem
-            // 
-            this.templateSendToolStripMenuItem.Name = "templateSendToolStripMenuItem";
-            this.templateSendToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.templateSendToolStripMenuItem.Text = "TemplateSend";
-            this.templateSendToolStripMenuItem.Click += new System.EventHandler(this.templateSendToolStripMenuItem_Click);
             // 
             // BlobTestForm
             // 

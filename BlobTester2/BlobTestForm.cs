@@ -131,7 +131,7 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
                 //-
                 await continentalUpdater.GetItemsAndUpdateContinentalAsync(
                     testProd: rbTestBlob.Checked ? TestProd.Test : TestProd.Prod,
-                    onlyRecent: cbUseRecentDate.Checked,
+                    onlyRecent: cbUseRecentDate.Checked, 
                     paramSince: cbUseRecentDate.Checked ? null : targetDate,
                     until: ((DateTime)targetDate).AddDays((int)spDays.Value),
                     onlyBus: tbBusFilter.Text,
@@ -139,10 +139,11 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
 
                 bsVehicleInQueue.DataSource = continentalUpdater.vehicleSenderList;
 
-                //while (!continentalUpdater.Empty())
-                //{
-                //    Thread.Sleep(TimeSpan.FromSeconds(1));
-                //}
+
+                while (!continentalUpdater.Empty())
+                {
+                   await Task.Delay(TimeSpan.FromSeconds(1));
+                }
             }
             while (cbDistributeLoop.Checked);
         }

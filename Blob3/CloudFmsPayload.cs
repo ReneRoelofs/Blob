@@ -53,7 +53,7 @@ public class Payload
 
     public Boolean HasPressureInfo()
     {
-        if (raw == null) 
+        if (raw == null)
             return false;
         return raw.HasPressureInfo();
     }
@@ -280,7 +280,13 @@ public class Payload
         succesfull = responsegps.IsSuccessful && succesfull;
         return succesfull;
     }
-    private Boolean SendMasterDataToContinental(Boolean useTimeStampNow)
+
+    /// <summary>
+    /// Send the masterdata to continental is something chnanged, and update the vehice.masterdataok boolean.
+    /// </summary>
+    /// <param name="useTimeStampNow"></param>
+    /// <returns></returns>
+    public Boolean SendMasterDataToContinental(Boolean useTimeStampNow)
     {
         Boolean succesfull = true;
         string sJson;
@@ -329,11 +335,58 @@ public class Payload
             }
             succesfull = response.IsSuccessful && succesfull;
         }
-
-
+        vehicle.masterdataOk = succesfull;
         return succesfull;
     }
 
+    /// <summary>
+    /// build a list of all sensors in this payload.
+    /// </summary>
+    /// <param name="useTimeStampNow"></param>
+    /// <param name="sensorsInThisPayload"></param>
+    /// <returns></returns> True : ok False: something wrong
+    public Boolean GetSensorsList(Boolean useTimeStampNow, out List<SensorData> sensorsInThisPayload)
+    {
+        Boolean result = true;
+        sensorsInThisPayload = new List<SensorData>();
+
+        //+
+        //---  Get al info from sensor data and ttm data.
+        //-
+        EnrichSensorWithTTM();
+
+        //+
+        //---  Build sensordata
+        //-
+        foreach (SensorData sensorData in this.sensorsDataList)
+        {
+            if (!String.IsNullOrEmpty(sensorData.sid) && sensorData.sid != "0" && sensorData.sid != "1")
+            {
+                SensorData prevSend = Statics.getSensor(sensorData); // get previous data or add this one.
+                sensorsInThisPayload.Add(sensorData);
+
+                /*
+                if (prevSend == sensorData)
+                {
+                    // log.Debug("NEW");
+                    sensorData.why = "NEW";
+                    sensorData.doSendData = true;
+                }
+                if (!sensorData.doSendData)
+                {
+                    if (sensorData.SignificantChange(prevSend, out sensorData.why))
+                    {
+                        // log.DebugFormat("NEW {1} {0}", sensorData.Text(),sensorData.why);
+                        // log.DebugFormat("OLD {1} {0}", prevSend.Text(),sendorData.why);
+                        sensorData.doSendData = true;
+                    }
+                }*/
+            }
+        }
+
+
+        return result;
+    }
 
     /// <summary>
     /// Send the sensordata to Continental IF
@@ -363,10 +416,6 @@ public class Payload
             if (!String.IsNullOrEmpty(sensorData.sid) && sensorData.sid != "0" && sensorData.sid != "1")
             {
                 SensorData prevSend = Statics.getSensor(sensorData);
-                if (prevSend == sensorData)
-                {
-                    string sX = "No prev found";
-                }
                 DateTime prevSendTs = prevSend.timestamp;
                 DateTime thisTs = sensorData.timestamp;
                 sensorsInThisPayload.Add(sensorData);
