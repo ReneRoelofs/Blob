@@ -121,31 +121,33 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
 
         private async void bGetBlobs_Click(object sender, EventArgs e)
         {
+            BlobDistributer.CancelationTokenSource = new CancellationTokenSource();
+            continentalUpdater.DoNowInALoop(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, BlobDistributer.CancelationTokenSource.Token);
 
-            do
-            {
-                DateTime? targetDate = GetFormTargetDate();
-               
-                //+
-                //--- start background task to get the items in a loop or not
-                //-
-                await continentalUpdater.GetItemsAndUpdateContinentalAsync(
-                    testProd: rbTestBlob.Checked ? TestProd.Test : TestProd.Prod,
-                    onlyRecent: cbUseRecentDate.Checked, 
-                    paramSince: cbUseRecentDate.Checked ? null : targetDate,
-                    until: ((DateTime)targetDate).AddDays((int)spDays.Value),
-                    onlyBus: tbBusFilter.Text,
-                    doLoop: false);
+          //  //do
+          //  {
+          //      DateTime? targetDate = GetFormTargetDate();
 
-                bsVehicleInQueue.DataSource = continentalUpdater.vehicleSenderList;
+            //      //+
+            //      //--- start background task to get the items in a loop or not
+            //      //-
+            //      await continentalUpdater.GetItemsAndUpdateContinentalAsync(
+            //          testProd: rbTestBlob.Checked ? TestProd.Test : TestProd.Prod,
+            //          onlyRecent: cbUseRecentDate.Checked, 
+            //          paramSince: cbUseRecentDate.Checked ? null : targetDate,
+            //          until: ((DateTime)targetDate).AddDays((int)spDays.Value),
+            //          onlyBus: tbBusFilter.Text,
+            //          doLoop: cbDistributeLoop.Checked);
+
+            //      bsVehicleInQueue.DataSource = continentalUpdater.vehicleSenderList;
 
 
-                while (!continentalUpdater.Empty())
-                {
-                   await Task.Delay(TimeSpan.FromSeconds(1));
-                }
-            }
-            while (cbDistributeLoop.Checked);
+            //      while (!continentalUpdater.Empty())
+            //      {
+            //         await Task.Delay(TimeSpan.FromSeconds(1));
+            //      }
+            //  }
+            ////  while (cbDistributeLoop.Checked);
         }
 
         private DateTime GetFormTargetDate()

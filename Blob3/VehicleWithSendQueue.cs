@@ -32,6 +32,37 @@ namespace Blob3
         [XmlIgnore]
         public List<SensorData> sensorDataList = new List<SensorData>();
 
+
+
+        private DateTime _updateFailed = DateTime.MinValue;
+
+        private DateTime updateFailed
+        {
+            get 
+            {
+                return _updateFailed;
+            }
+            set
+            {
+                _updateFailed = value;
+                if (value != DateTime.MinValue)
+                {
+                    log.DebugFormat("Vehicle {0,3} :  Update Failed at ={1:HH:mm} retry from {2:HH:mm}",
+                                    vehicleNumber, updateFailed, updateFailed.AddMinutes(60));
+                }
+            }
+        }
+
+        private Boolean UpdateFailedRecently()
+        {
+            if (DateTime.Now.Subtract(updateFailed).TotalMinutes > 60)
+            {
+                updateFailed = DateTime.MinValue;
+                return false;
+            }
+            return true;
+        }
+
         public VehicleWithSendQueue()
         {
             StartSenderTasks();
@@ -90,23 +121,16 @@ namespace Blob3
 
                 if (blobItemQueue.TryDequeue(out blobItem))
                 {
-                    //+
-                    //--- NIET ignoren want er kan een alarm in zitten.
-                    //-
-
-                    /** 
-                    if (allSensorsUpToDate())
+                    if (UpdateFailedRecently())
                     {
-                        log.DebugFormat("{0}: All up-to-date Ignore blob", this.vehicleNumber);
-                        continue;// alles is up-to-date..negeren die hap
+                        //log.DebugFormat("Vehicle {0,3} :  Update Failed retry at {2:HH:mm}",
+                        //    vehicleNumber, updateFailed, updateFailed.AddMinutes(60));
+                        continue;
                     }
-                    **/
 
-                    //  Feedback(string.Format("{0,3} : Dequeue   {1} {2}", vehicleNumber, blobItemQueue.Count, blobItem.Name));
                     //+
-                    //--- download to string
+                    //--- inv: update not failed or failed longer then 60 min ago
                     //-
-
                     BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
                     BlobDownloadResult x = blobClient.DownloadContent();
                     string str = x.Content.ToString();
@@ -137,6 +161,11 @@ namespace Blob3
                             {
                                 payload.vehicle = vehicle;
                                 UpdateSensorDataListViaPayload(payload);
+
+                                if (UpdateFailedRecently())
+                                {
+                                    break;
+                                }
                             }
                             //   log.InfoFormat("Veh={0,4} Send timeout date from blob {1}", vehicleNumber, blobItem.Name);
                             SendAllSensorForTimeout();
@@ -146,6 +175,7 @@ namespace Blob3
                     {
                         log.WarnFormat("Oops for {0} {1}", blobItem.Name, ex.Message);
                     }
+
                 }
                 else
                 {
@@ -183,7 +213,7 @@ namespace Blob3
 
         /// <summary>
         /// Nieuwe routine!
-        /// Udpdate all sensordata and send directly if something important changed.
+        /// Update all sensordata and send directly if something important changed, but NOT when a timeout occured that will be handled later.
         /// </summary>
         private Boolean UpdateSensorDataListViaPayload(Payload payLoad)
         {
@@ -192,9 +222,11 @@ namespace Blob3
             {
                 //+
                 //--- sending went wrong, flush the rest.
-                log.DebugFormat("{0}: SendToMasterdataToContinental failed.. flush the blobQueue for this vehiucle", this.vehicleNumber);
-                FlushBlobQueue();
-                FlushPayLoadQueue();
+                //-
+                updateFailed = DateTime.Now;
+                //log.DebugFormat("{0}: SendToMasterdataToContinental failed.. flush the blobQueue for this vehicle", this.vehicleNumber);
+                //FlushBlobQueue();
+                //FlushPayLoadQueue();
                 return false;
             }
             //+
@@ -237,6 +269,10 @@ namespace Blob3
                 {
                     SendSensorDataToContinental(newSensorData, useTimestampNow);
                     Statics.ReplaceSensorInList(sensorDataInVehicle, newSensorData);
+                    if (UpdateFailedRecently())
+                    {
+                        break;
+                    }
                 }
                 //+
                 //--- replace sensorDataList with this one.
@@ -262,6 +298,11 @@ namespace Blob3
                 {
                     sensorData.why = "TIME";
                     SendSensorDataToContinental(sensorData, useTimestampNow);
+
+                    if (UpdateFailedRecently())
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -383,6 +424,7 @@ namespace Blob3
             }
             else // Not Response.IsSuccesfull // more feedback and no sensorupdate
             {
+                this.updateFailed = DateTime.Now;
                 log.WarnFormat("Veh={0,4} Loc={1,2} Why={2,4} Time={3} Url={4} SensorHex={5} Status={6} Response={7}",
                     this.vehicleNumber,
                     sensorData.location,

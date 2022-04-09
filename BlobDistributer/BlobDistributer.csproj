@@ -83,6 +83,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Blob3\ContinentalBlob.csproj">
+      <Project>{af3ef9f9-4099-4387-ae0f-4139fca2d1a5}</Project>
+      <Name>ContinentalBlob</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BlobHander3\BlobHandler.csproj">
       <Project>{3b1bbc61-200c-46c1-8f73-5428ac3231f0}</Project>
       <Name>BlobHandler</Name>

@@ -54,7 +54,7 @@ namespace Blob3
                 testProd: testProd,
                 onlyRecent: true,
                 paramSince: null,
-                until : null,
+                until: null,
                 onlyBus: "",
                 doLoop: true);
         }
@@ -84,6 +84,10 @@ namespace Blob3
                     getterStartTime = DateTime.Now;
                     getterStopWatch.Restart();
 
+
+                    //+
+                    //--- non default behavour: parameters given for from and until date.
+                    //-
                     if (!onlyRecent)
                     {
                         this.since = (DateTime)paramSince;
@@ -128,12 +132,14 @@ namespace Blob3
                     }
                     getterStopWatch.Stop();
                     getterAmmount = items.Count;
-
                     if (doLoop)
                     {
-                        Thread.Sleep(TimeSpan.FromMinutes(FmsBlobToContinental.Statics.MinutesForMainLoop));
+                        while (!Empty())
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(1));
+                        }
+                        await Task.Delay(TimeSpan.FromMinutes(FmsBlobToContinental.Statics.MinutesForMainLoop));
                     }
-
                 }
                 catch (Exception ex)
                 {
@@ -142,6 +148,54 @@ namespace Blob3
                 if (!doLoop)
                 {
                     break; // only once if ! doloop;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update to continental in a loop for the pas half hour. Used in the service.
+        /// </summary>
+        /// <param name="testProd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task DoNowInALoop(TestProd testProd, CancellationToken ct)
+        {
+            containerClient = BlobHandler.Statics.GetContainerClient(testProd);
+            List<BlobItem> items = new List<BlobItem>();
+
+            while (!ct.IsCancellationRequested)
+            {
+                getterStartTime = DateTime.Now;
+                getterStopWatch.Restart();
+
+                since = DateTime.Now.ToUniversalTime().AddMinutes(-30);
+                DateTime until = since.AddDays(1);
+
+                Statics.SaveSensorList();
+                Statics.SaveVehicleList();
+
+                BlobHandler.BlobItemList blobItemlist = new BlobHandler.BlobItemList(DownloadAndEnqueueToSend);
+                await blobItemlist.GetBlobItemsASync(
+                    testProd,
+                    since,
+                    until,
+                    downloadToFile: false,
+                    onlyVehicle: "");
+
+                getterStopWatch.Stop();
+                getterAmmount = items.Count;
+
+                while (!Empty())
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    if (ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                }
+                if (!ct.IsCancellationRequested)
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(FmsBlobToContinental.Statics.MinutesForMainLoop));
                 }
             }
         }
@@ -194,7 +248,7 @@ namespace Blob3
             return (nItemsInQueues == 0 && nPayloadsInQueues == 0);
         }
 
-      
+
         /// <summary>
         /// Put a new blobitem in the vehicle's queue in order to send the data.
         /// </summary>
@@ -205,7 +259,7 @@ namespace Blob3
             blobFilename.Name = blobItem.Name;
 
 
-            CCVehicle vehicle =  Statics.vehicleList.GetOrAdd(blobFilename.vehicleNumber, blobFilename.AgentSerialNumber);
+            CCVehicle vehicle = Statics.vehicleList.GetOrAdd(blobFilename.vehicleNumber, blobFilename.AgentSerialNumber);
             vehicle.timestampFileSeen = blobFilename.timeStamp;
 
             //DateTime lastModified = (((DateTimeOffset)blobItem.Properties.LastModified).ToUniversalTime()).DateTime;

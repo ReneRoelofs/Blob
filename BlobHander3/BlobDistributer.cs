@@ -99,10 +99,19 @@ namespace BlobHandler
                 log.InfoFormat("no (more) blobs found", MaxRecs, Statics.prefix);
                 if (doLoop && !ct.IsCancellationRequested)
                 {
-                    log.InfoFormat("Loop: Waiting for {0} seconds",Statics.DelayWhenNothingFound);
-                    Thread.Sleep(TimeSpan.FromSeconds(Statics.DelayWhenNothingFound)); // 
                     foundAtLeastOne = true;// make sure to go in to the innerloop above.
-                }
+        
+                    
+                    log.InfoFormat("Loop: Waiting for {0} seconds",Statics.DelayWhenNothingFound);
+                    for (int i = 0; i < 10; i++)
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(Statics.DelayWhenNothingFound / 10)); // 
+                        if (ct.IsCancellationRequested)
+                        {
+                            break;
+                        }
+                    }
+               }
             } while (doLoop && !ct.IsCancellationRequested); 
 
             running = false;

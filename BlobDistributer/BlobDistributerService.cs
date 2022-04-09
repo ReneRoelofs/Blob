@@ -8,6 +8,7 @@ using System.ServiceProcess;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Blob3;
 using BlobHandler;
 
 namespace BlobDistributer
@@ -50,7 +51,7 @@ namespace BlobDistributer
                 log.InfoFormat("TestProd = {0}", testProd.ToString());
                 log.InfoFormat("Src URL = {0}", BlobHandler.Statics.GetConnectionString(testProd));
                 log.InfoFormat("Delay when no (more) blobs found = {0} sec", BlobHandler.Statics.DelayWhenNothingFound);
-                log.InfoFormat("Target URL = Src+yyyy/MM/dd","");
+                log.InfoFormat("Target URL = Src+yyyy/MM/dd", "");
 
                 distributer = new BlobHandler.BlobDistributer(testProd, DistributeFinished);
 
@@ -61,6 +62,17 @@ namespace BlobDistributer
                 //-
                 Task.Run(() => distributer.DistributeAllNow(
                     BlobHandler.BlobDistributer.CancelationTokenSource.Token, doLoop: true));
+
+
+
+                //+
+                //--- run the continental updater in a loop
+                //-
+                ContinentalUpdater continentalUpdater = new ContinentalUpdater();
+
+                Task.Run(() =>
+                continentalUpdater.DoNowInALoop(testProd: testProd, BlobHandler.BlobDistributer.CancelationTokenSource.Token));
+                    
             }
             catch (Exception ex)
             {

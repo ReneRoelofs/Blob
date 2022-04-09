@@ -228,9 +228,9 @@ namespace FmsBlobToContinental
         /// <returns></returns>
         public Boolean SignificantChange(SensorData Prev, out string why)
         {
-            if (Prev.timestamp > this.timestamp)
+            if (Prev.timestamp > this.timestamp || this.timestampUploaded > this.timestamp)
             {
-                // never update an older one;
+                // never update an older one; or one that has already been updated.
                 why = "outdated";
                 return false;
             }
