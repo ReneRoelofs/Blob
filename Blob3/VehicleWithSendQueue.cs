@@ -23,8 +23,8 @@ namespace Blob3
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        [XmlIgnore]
-        private ConcurrentQueue<Payload> payloadQueue = new ConcurrentQueue<Payload>();
+     //   [XmlIgnore]
+     //   private ConcurrentQueue<Payload> payloadQueue = new ConcurrentQueue<Payload>();
 
         private ConcurrentQueue<BlobItem> blobItemQueue = new ConcurrentQueue<BlobItem>(); // the main queue of incoming blobs, handled one by one. in DownloadBlobItem
         public Boolean useTimestampNow;
@@ -75,18 +75,18 @@ namespace Blob3
                 return blobItemQueue.Count;
             }
         }
-        public int PayloadQueueCount
-        {
-            get
-            {
-                return payloadQueue.Count;
-            }
-        }
+        //public int PayloadQueueCount
+        //{
+        //    get
+        //    {
+        //        return payloadQueue.Count;
+        //    }
+        //}
 
-        public void EnqueuePayload(Payload payload)
-        {
-            payloadQueue.Enqueue(payload);
-        }
+        //public void EnqueuePayload(Payload payload)
+        //{
+        //    payloadQueue.Enqueue(payload);
+        //}
 
         public void EnqueueBlobItemForDownload(BlobItem blobItem)
         {
@@ -97,15 +97,7 @@ namespace Blob3
         public void StartSenderTasks()
         {
             Task.Factory.StartNew(() => DownloadBlobItem());
-            Task.Factory.StartNew(() => SendPayloadToContinental());
-        }
-
-        public void WriteStatusToFeedback()
-        {
-            log.Debug(string.Format("Vehicle {0,3} :  BlobQueueLen={1,2} PayloadQuelen={2,3}",
-                           vehicleNumber,
-                           blobItemQueue.Count,
-                           PayloadQueueCount));
+         //   Task.Factory.StartNew(() => SendPayloadToContinental());
         }
 
         /// <summary>
@@ -140,8 +132,7 @@ namespace Blob3
                     {
                         log.DebugFormat("Vehicle {0,3} :  BlobQueueLen={1,2} PayloadQuelen={2,3}",
                             vehicleNumber,
-                            blobItemQueue.Count,
-                            PayloadQueueCount);
+                            blobItemQueue.Count);
                     }
                     try
                     {
@@ -307,81 +298,6 @@ namespace Blob3
             }
         }
 
-
-        /// <summary>
-        /// Handle the payloadQueue and send all data to continental
-        /// </summary>
-        private void SendPayloadToContinental()
-        {
-            Payload payLoad = null;
-            try
-            {
-                while (true)
-                {
-                    if (payloadQueue.TryDequeue(out payLoad)) //VehicleWithSendQueu main playload loop
-                    {
-                        //+
-                        //--- als we 6 sensors kennen en ze zijn allemaal up-to-date, dan direct flushen
-                        //-
-
-                        /** NEE niet flushen, er kan een alarm in zitten.
-                        if (allSensorsUpToDate())
-                        {
-                            log.InfoFormat("{0}: All up-to-date flush the payload", this.vehicleNumber);
-                            FlushPayLoadQueue();
-                            continue;
-                        }**/
-
-                        List<SensorData> sensorsInThisPayload;
-                        if (payloadQueue.Count == 0)
-                        {
-                            //+
-                            //--- this is the last one in the queue, we will always send that one.
-                            //-
-                            Boolean last = true;
-                        }
-                        Boolean SendResult = payLoad.SendToContinentalIfNeeded(useTimestampNow, out sensorsInThisPayload);
-                        if (!SendResult)
-                        {
-                            //+
-                            //--- sending went wrong, flush the rest.
-                            log.DebugFormat("{0}: SendToContinental failed.. flush the payload and the blobQueue", this.vehicleNumber);
-                            FlushBlobQueue();
-                            FlushPayLoadQueue();
-                            continue;
-                        }
-                        else // SendResult == true, sending went OK
-                        {
-                            //+
-                            //--- upload OK, lets see for which sensor this was, update to administrate there timestamps.
-                            //-
-                            int i = sensorsInThisPayload.Count;
-                            foreach (SensorData newSensorData in sensorsInThisPayload)
-                            {
-                                SensorData sensorDataInVehicle = this.sensorDataList.Find(S => S.location == newSensorData.location);
-                                if (sensorDataInVehicle != null)
-                                {
-                                    this.sensorDataList.Remove(sensorDataInVehicle);
-                                }
-                                this.sensorDataList.Add(newSensorData);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Thread.Sleep(TimeSpan.FromMilliseconds(10));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                log.WarnFormat("oops for vehicle {0} : {1}", vehicleNumber, RR.Lib.ExceptionInfoStackTrace(ex));
-                FlushBlobQueue();
-                FlushPayLoadQueue();
-            }
-        }
-
-
         private Boolean SendSensorDataToContinental(SensorData sensorData, Boolean useTimeStampNow)
         {
             var request = new CCRestRequest(Method.PUT, this.testProd);
@@ -446,21 +362,6 @@ namespace Blob3
             }
             return response.IsSuccessful;
 
-        }
-
-        /// <summary>
-        /// Flush all the payloadqueue, something was wrong in there..
-        /// </summary>
-        public void FlushPayLoadQueue()
-        {
-            //+
-            //--- flush the queue for for now
-            //-
-            Payload payLoad;
-            while (payloadQueue.TryDequeue(out payLoad)) // FLUSH
-            {
-                ;// just flush it.
-            }
         }
 
         /// <summary>

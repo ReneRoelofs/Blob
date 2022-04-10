@@ -52,7 +52,6 @@ namespace BlobTester
             this.bOpenFile = new System.Windows.Forms.Button();
             this.cbAppend = new System.Windows.Forms.CheckBox();
             this.cbUseTimestampNow = new System.Windows.Forms.CheckBox();
-            this.bSend = new System.Windows.Forms.Button();
             this.lbVehiclelabel = new System.Windows.Forms.Label();
             this.lbVehicle = new System.Windows.Forms.TextBox();
             this.bViewData = new System.Windows.Forms.Button();
@@ -92,11 +91,6 @@ namespace BlobTester
             this.bindingNavigatorSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.gridView2 = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.gcPayload = new DevExpress.XtraGrid.GridControl();
-            this.menuStripPayload = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.dbgTireCondition = new System.Windows.Forms.ToolStripMenuItem();
-            this.templateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.dbgSend = new System.Windows.Forms.ToolStripMenuItem();
-            this.templateSendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.gvPayload = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.gridView3 = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.bindingNavigator1 = new System.Windows.Forms.BindingNavigator(this.components);
@@ -157,7 +151,6 @@ namespace BlobTester
             this.bnFiles.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gridView2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gcPayload)).BeginInit();
-            this.menuStripPayload.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gvPayload)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView3)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bindingNavigator1)).BeginInit();
@@ -280,7 +273,6 @@ namespace BlobTester
             this.groupBox1.Controls.Add(this.bOpenFile);
             this.groupBox1.Controls.Add(this.cbAppend);
             this.groupBox1.Controls.Add(this.cbUseTimestampNow);
-            this.groupBox1.Controls.Add(this.bSend);
             this.groupBox1.Controls.Add(this.lbVehiclelabel);
             this.groupBox1.Controls.Add(this.lbVehicle);
             this.groupBox1.Location = new System.Drawing.Point(699, 12);
@@ -388,16 +380,6 @@ namespace BlobTester
             this.cbUseTimestampNow.Text = "Use Timestamp \'now\'";
             this.cbUseTimestampNow.UseVisualStyleBackColor = true;
             this.cbUseTimestampNow.CheckedChanged += new System.EventHandler(this.cbUseTimestampNow_CheckedChanged);
-            // 
-            // bSend
-            // 
-            this.bSend.Location = new System.Drawing.Point(447, 54);
-            this.bSend.Name = "bSend";
-            this.bSend.Size = new System.Drawing.Size(89, 23);
-            this.bSend.TabIndex = 15;
-            this.bSend.Text = "Send1File";
-            this.bSend.UseVisualStyleBackColor = true;
-            this.bSend.Click += new System.EventHandler(this.bSendOne_Click);
             // 
             // lbVehiclelabel
             // 
@@ -766,7 +748,6 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem1.AccessibleName = "Position";
             this.bindingNavigatorPositionItem1.AutoSize = false;
-            this.bindingNavigatorPositionItem1.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem1.Name = "bindingNavigatorPositionItem1";
             this.bindingNavigatorPositionItem1.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem1.Text = "0";
@@ -811,7 +792,6 @@ namespace BlobTester
             // 
             // gcPayload
             // 
-            this.gcPayload.ContextMenuStrip = this.menuStripPayload;
             this.gcPayload.DataSource = this.bsPayload;
             this.gcPayload.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gcPayload.Location = new System.Drawing.Point(0, 25);
@@ -823,45 +803,6 @@ namespace BlobTester
             this.gvPayload,
             this.gridView3});
             this.gcPayload.Click += new System.EventHandler(this.gcPayload_Click);
-            // 
-            // menuStripPayload
-            // 
-            this.menuStripPayload.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.dbgTireCondition,
-            this.dbgSend});
-            this.menuStripPayload.Name = "menuStripPayload";
-            this.menuStripPayload.Size = new System.Drawing.Size(175, 48);
-            this.menuStripPayload.Opened += new System.EventHandler(this.menuStripPayload_Opened);
-            // 
-            // dbgTireCondition
-            // 
-            this.dbgTireCondition.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.templateToolStripMenuItem});
-            this.dbgTireCondition.Name = "dbgTireCondition";
-            this.dbgTireCondition.Size = new System.Drawing.Size(174, 22);
-            this.dbgTireCondition.Text = "Debug ";
-            // 
-            // templateToolStripMenuItem
-            // 
-            this.templateToolStripMenuItem.Name = "templateToolStripMenuItem";
-            this.templateToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
-            this.templateToolStripMenuItem.Text = "Template";
-            this.templateToolStripMenuItem.Click += new System.EventHandler(this.FEF4_Click);
-            // 
-            // dbgSend
-            // 
-            this.dbgSend.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.templateSendToolStripMenuItem});
-            this.dbgSend.Name = "dbgSend";
-            this.dbgSend.Size = new System.Drawing.Size(174, 22);
-            this.dbgSend.Text = "SendToContinental";
-            // 
-            // templateSendToolStripMenuItem
-            // 
-            this.templateSendToolStripMenuItem.Name = "templateSendToolStripMenuItem";
-            this.templateSendToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
-            this.templateSendToolStripMenuItem.Text = "TemplateSend";
-            this.templateSendToolStripMenuItem.Click += new System.EventHandler(this.templateSendToolStripMenuItem_Click);
             // 
             // gvPayload
             // 
@@ -943,7 +884,6 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem.AccessibleName = "Position";
             this.bindingNavigatorPositionItem.AutoSize = false;
-            this.bindingNavigatorPositionItem.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem.Name = "bindingNavigatorPositionItem";
             this.bindingNavigatorPositionItem.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem.Text = "0";
@@ -1256,7 +1196,6 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem2.AccessibleName = "Position";
             this.bindingNavigatorPositionItem2.AutoSize = false;
-            this.bindingNavigatorPositionItem2.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem2.Name = "bindingNavigatorPositionItem2";
             this.bindingNavigatorPositionItem2.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem2.Text = "0";
@@ -1325,7 +1264,6 @@ namespace BlobTester
             this.bnFiles.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gridView2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gcPayload)).EndInit();
-            this.menuStripPayload.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.gvPayload)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView3)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.bindingNavigator1)).EndInit();
@@ -1388,7 +1326,6 @@ namespace BlobTester
         private System.Windows.Forms.CheckBox cbDetailedContiLogging;
         private System.Windows.Forms.Label lbBlobQueue;
         private System.Windows.Forms.CheckBox cbAppend;
-        private System.Windows.Forms.Button bSend;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.RadioButton rbTestConti;
         private System.Windows.Forms.RadioButton rbProdConti;
@@ -1475,11 +1412,6 @@ namespace BlobTester
         private System.Windows.Forms.NumericUpDown spDays;
         private System.Windows.Forms.CheckBox cbDetailedDistributeLogging;
         private System.Windows.Forms.CheckBox cbDistributeLoop;
-        private System.Windows.Forms.ContextMenuStrip menuStripPayload;
-        private System.Windows.Forms.ToolStripMenuItem dbgTireCondition;
-        private System.Windows.Forms.ToolStripMenuItem templateToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem dbgSend;
-        private System.Windows.Forms.ToolStripMenuItem templateSendToolStripMenuItem;
     }
 }
 

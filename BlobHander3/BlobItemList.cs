@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlobHandler
@@ -39,7 +40,8 @@ namespace BlobHandler
             DateTime sinceUTC,
             DateTime? untilUTC,
             bool downloadToFile,
-            string onlyVehicle = null)
+            string onlyVehicle,
+            CancellationToken ct)
         {
 
             List<BlobItem> result = new List<BlobItem>();
@@ -81,6 +83,11 @@ namespace BlobHandler
                     IEnumerator<BlobItem> enumerator = allBlobs.GetEnumerator();
                     while (enumerator.MoveNext())
                     {
+                        if (ct.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
                         BlobItem blobItem = enumerator.Current;
                         blobFilename.Name = blobItem.Name; // thus get the vehiclenumber and date from the filename.
                         Boolean addToResult = true;
@@ -127,6 +134,10 @@ namespace BlobHandler
                         untilUTC = DateTime.Now;
                     }
 
+                    if (ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
                 }// While dateloop.
                  //+
                  //--- sort them by lastmodified to be sure to handle them in the correct order

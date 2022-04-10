@@ -67,5 +67,14 @@ namespace BlobDistributer.Properties {
                 return ((int)(this["DelayWhenNothingFound"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SendToContinental {
+            get {
+                return ((bool)(this["SendToContinental"]));
+            }
+        }
     }
 }

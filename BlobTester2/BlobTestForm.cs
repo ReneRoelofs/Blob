@@ -30,6 +30,7 @@ namespace BlobTester
     public partial class BlobTestForm : Form
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        CancellationTokenSource cts = new CancellationTokenSource();
 
         Boolean loading { get; set; } = true;
 
@@ -121,8 +122,10 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
 
         private async void bGetBlobs_Click(object sender, EventArgs e)
         {
+            cts.Cancel();
+            cts = new CancellationTokenSource();
             BlobDistributer.CancelationTokenSource = new CancellationTokenSource();
-            continentalUpdater.DoNowInALoop(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, BlobDistributer.CancelationTokenSource.Token);
+            continentalUpdater.DoNowInALoop(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, cts.Token);
 
           //  //do
           //  {
@@ -332,52 +335,7 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             tbFeedback2.Clear();
         }
 
-        private void bSendOne_Click(object sender, EventArgs e)
-        {
-            if (rbTestConti.Checked)
-            {
-                vehicle.testProd = TestProd.Test;
-            }
-            else
-            {
-                vehicle.testProd = TestProd.Prod;
-            }
-
-            Boolean succesfull = true;
-
-            List<Payload> tmpList = payloadList.FindAll(P => P.NewEnoughToSend(vehicle, cbUseTimestampNow.Checked));
-            log.InfoFormat("Sending {0} payload items", tmpList.Count);
-
-            Task.Factory.StartNew(() =>
-            {
-                int index = 0;
-                foreach (Payload payload in tmpList)
-                {
-                    log.InfoFormat("{0}/{1}", index++.ToString(), tmpList.Count);
-                    if (payload != null)
-                    {
-                        List<SensorData> sensorsInThisPayload;
-                        succesfull = succesfull &&
-                            payload.SendToContinentalIfNeeded(
-                                    cbUseTimestampNow.Checked,
-                                    out sensorsInThisPayload);
-                    }
-                    if (!succesfull)
-                    {
-                        break;
-                    }
-                }
-            });
-
-            if (tmpList.Count == 0)
-            {
-                log.Warn("Nothing new enough to send");
-            }
-            else
-            {
-                FmsBlobToContinental.Statics.SaveVehicleList();
-            }
-        }
+      
 
 
         private void rbTestConti_CheckedChanged(object sender, EventArgs e)
@@ -541,15 +499,21 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             gcFiles.DataSource = bsBlobItems;
             bsPayload.DataSource = payloadList;
             SetPayloadFieldNames();
+            
 
             itemsOnForm.Clear();
+
+            cts.Cancel();
+            cts = new CancellationTokenSource();
+
 
             _ = await blobItemlist.GetBlobItemsASync(
                 testProd: rbTestBlob.Checked ? TestProd.Test : TestProd.Prod,
                 (DateTime)targetDate,
                 ((DateTime)targetDate).AddDays((int)spDays.Value),
                 cbDownload.Checked,
-                onlyVehicle: tbBusFilter.Text
+                onlyVehicle: tbBusFilter.Text,
+                cts.Token
                 );
 
             containerClient = null;// reset when showing the payload.
@@ -985,38 +949,7 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             BlobHandler.Statics.detailedDistributeLogging = cbDetailedDistributeLogging.Checked;
         }
 
-        private void menuStripPayload_Opened(object sender, EventArgs e)
-        {
-            dbgTireCondition.DropDownItems.Clear();
-            dbgSend.DropDownItems.Clear();
-
-            Payload payload = (Payload)bsPayload.Current;
-            if (payload != null)
-            {
-                if (payload.raw.FEF4 != null)
-                {
-                    foreach (string sensor in payload.raw.FEF4)
-                    {
-                        ToolStripItem item =
-                                dbgTireCondition.DropDownItems.Add(sensor, null, new System.EventHandler(this.FEF4_Click));
-                        item.Tag = payload;
-                        item = dbgSend.DropDownItems.Add(sensor, null, new System.EventHandler(this.templateSendToolStripMenuItem_Click));
-                        item.Tag = payload;
-                    }
-                }
-                if (payload.raw.FC42 != null)
-                {
-                    foreach (string sensor in payload.raw.FC42)
-                    {
-                        ToolStripItem item =
-                                dbgTireCondition.DropDownItems.Add(sensor, null, new System.EventHandler(this.FC42_Click));
-                        item.Tag = payload;
-                        item = dbgSend.DropDownItems.Add(sensor, null, new System.EventHandler(this.templateSendToolStripMenuItem_Click));
-                        item.Tag = payload;
-                    }
-                }
-            }
-        }
+       
 
         private void FEF4_Click(object sender, EventArgs e)
         {
@@ -1058,27 +991,6 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
                     log.DebugFormat("OLD {0}", prevSend.Text());
                 }
                 FmsBlobToContinental.Statics.ReplaceSensorInList(prevSend, sd);
-            }
-        }
-
-
-
-        VehicleWithSendQueue tmpVehicle = new VehicleWithSendQueue();
-        /// <summary>
-        /// Test the enqueu (en thus sending) of one payload.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void templateSendToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToolStripDropDownItem item = (ToolStripDropDownItem)sender;
-            if (item != null)
-            {
-                SensorData sd = new SensorData();
-                Payload pl = (Payload)(item.Tag);
-                tmpVehicle.EnqueuePayload(pl);
-                //log.InfoFormat("Debug {0} FEF4 {1}", pl.ts, item.Text);
-                //sd.SetConditionFromFEF4(item.Text, debug: true);
             }
         }
     }

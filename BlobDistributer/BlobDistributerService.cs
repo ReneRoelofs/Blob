@@ -14,6 +14,20 @@ using BlobHandler;
 namespace BlobDistributer
 {
 
+    /*
+     * ik kreeg opeens een fout
+     * Kan bestand of assembly System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51 
+     * 
+     * opgelost door onderstaande te verwijderen uit de configuratie
+     
+      <dependentAssembly>
+        <assemblyIdentity name = "System.ValueTuple" publicKeyToken="cc7b13ffcd2ddd51" culture="neutral" />
+        <bindingRedirect oldVersion = "0.0.0.0-4.0.3.0" newVersion="4.0.3.0" />
+      </dependentAssembly>
+
+
+    */
+
     /// <summary>
     /// The BlobDistributerService distributes all blobs into subdirectories for yyyy/MM/dd on the blobstorage
     /// this is the first step in the Continental blob tire pressure flow.
@@ -64,15 +78,28 @@ namespace BlobDistributer
                     BlobHandler.BlobDistributer.CancelationTokenSource.Token, doLoop: true));
 
 
+                if (Properties.Settings.Default.SendToContinental)
+                {
+                    //+
+                    //--- run the continental updater in a loop
+                    //-
+                    log.InfoFormat("Sending data to continental after 1 minute");
+                    ContinentalUpdater continentalUpdater = new ContinentalUpdater();
+                    Task.Run(() =>
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(60));
+                        continentalUpdater.DoNowInALoop(testProd: testProd, BlobHandler.BlobDistributer.CancelationTokenSource.Token);
+                    }
+                    );
+                }
+                else
+                {
+                    log.InfoFormat("Not sending data to continental use setting SendToContinental to change this");
 
-                //+
-                //--- run the continental updater in a loop
-                //-
-                ContinentalUpdater continentalUpdater = new ContinentalUpdater();
+                }
 
-                Task.Run(() =>
-                continentalUpdater.DoNowInALoop(testProd: testProd, BlobHandler.BlobDistributer.CancelationTokenSource.Token));
-                    
+
+
             }
             catch (Exception ex)
             {

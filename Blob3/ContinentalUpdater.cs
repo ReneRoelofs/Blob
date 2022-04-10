@@ -18,7 +18,6 @@ namespace Blob3
 {
     public class ContinentalUpdater
     {
-        //TODO: hoe gaan we om met cancelations?
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         BlobContainerClient containerClient = null;
@@ -41,24 +40,6 @@ namespace Blob3
         int getterAmmount = 0;
 
 
-
-
-        /// <summary>
-        /// This routine can be used in a service.. Just get the data, sendit, and do it again.
-        /// calles GetItemsAndUpdateContinental with a lot of default parameters.
-        /// <param name="testProd"></param>
-        /// </summary>
-        public Task GetItemsAndUpdateContinental(TestProd testProd)
-        {
-            return GetItemsAndUpdateContinentalAsync(
-                testProd: testProd,
-                onlyRecent: true,
-                paramSince: null,
-                until: null,
-                onlyBus: "",
-                doLoop: true);
-        }
-
         /// <summary>
         /// Get all data, used for service and debugging. Just get the data, sendit, and do it again. Build a list First.
         /// </summary>
@@ -70,10 +51,11 @@ namespace Blob3
         public async Task GetItemsAndUpdateContinentalAsync(
                         TestProd testProd,
                         Boolean onlyRecent,         // = true,
-                        DateTime? paramSince,            // = null,
-                        DateTime? until,             // = null,
+                        DateTime? paramSince,       // = null,
+                        DateTime? until,            // = null,
                         string onlyBus,             // = "",
-                        Boolean doLoop)             //=true)
+                        Boolean doLoop,             //=true)
+                        CancellationToken ct)             
         {
             containerClient = BlobHandler.Statics.GetContainerClient(testProd);
             List<BlobItem> items = new List<BlobItem>();
@@ -117,7 +99,8 @@ namespace Blob3
                         this.since,
                         until,
                         downloadToFile: false,
-                        onlyVehicle: onlyBus);
+                        onlyVehicle: onlyBus,
+                        ct);
 
                     if (items.Count > 0)
                     {
@@ -138,7 +121,19 @@ namespace Blob3
                         {
                             await Task.Delay(TimeSpan.FromSeconds(1));
                         }
-                        await Task.Delay(TimeSpan.FromMinutes(FmsBlobToContinental.Statics.MinutesForMainLoop));
+                        if (ct.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        for (int i = 0; i < 10; i++)
+                        {
+                            Thread.Sleep(TimeSpan.FromSeconds(Statics.MinutesForMainLoop / 10)); // 
+                            if (ct.IsCancellationRequested)
+                            {
+                                break;
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -148,6 +143,10 @@ namespace Blob3
                 if (!doLoop)
                 {
                     break; // only once if ! doloop;
+                }
+                if (ct.IsCancellationRequested)
+                {
+                    break;
                 }
             }
         }
@@ -180,7 +179,8 @@ namespace Blob3
                     since,
                     until,
                     downloadToFile: false,
-                    onlyVehicle: "");
+                    onlyVehicle: "",
+                    ct);
 
                 getterStopWatch.Stop();
                 getterAmmount = items.Count;
@@ -195,14 +195,28 @@ namespace Blob3
                 }
                 if (!ct.IsCancellationRequested)
                 {
-                    await Task.Delay(TimeSpan.FromMinutes(FmsBlobToContinental.Statics.MinutesForMainLoop));
+                    for (int i = 0; i < 10; i++)
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(Statics.MinutesForMainLoop / 10)); // 
+                        if (ct.IsCancellationRequested)
+                        {
+                            break;
+                        }
+                    }
+                    //await Task.Delay(TimeSpan.FromMinutes(FmsBlobToContinental.Statics.MinutesForMainLoop));
                 }
+                if (ct.IsCancellationRequested)
+                {
+                    log.Info("Cancelation requested");
+                }
+
+
             }
         }
 
 
         private int nItemsInQueues = 0;
-        private int nPayloadsInQueues = 0;
+       // private int nPayloadsInQueues = 0;
 
         /// <summary>
         /// How many items a in the sendqueue
@@ -213,14 +227,14 @@ namespace Blob3
             lock (vehicleSenderList)
             {
                 nItemsInQueues = 0;
-                nPayloadsInQueues = 0;
+               // nPayloadsInQueues = 0;
 
                 vehicleSenderList.Sort((x, y) => x.vehicleNumber.CompareTo(y.vehicleNumber));
 
                 foreach (VehicleWithSendQueue vc in vehicleSenderList)
                 {
                     nItemsInQueues += vc.blobItemQueueCount;
-                    nPayloadsInQueues += vc.PayloadQueueCount;
+                   // nPayloadsInQueues += vc.PayloadQueueCount;
                     // if (vc.PayloadQueueCount() != 0)
                     {
                         //     vc.WriteStatusToFeedback();
@@ -236,16 +250,16 @@ namespace Blob3
             {
                 Getterinfo = string.Format(" getting items started at {0:HH:mm:ss} elapsed {1} ", getterStartTime, RR.Lib.Elapsed(getterStopWatch));
             }
-            return string.Format("{0:HH:mm:ss} Send TirePressure to Continental : {1} blobitems, in {3} vehiclequeues. {4}",
+            return string.Format("{0:HH:mm:ss} Send TirePressure to Continental : {1} blobitems, in {2} vehiclequeues. {3}",
                 DateTime.Now,
                 nItemsInQueues,
-                nPayloadsInQueues,
+                //nPayloadsInQueues,
                 vehicleSenderList.Count, Getterinfo);
         }
 
         public Boolean Empty()
         {
-            return (nItemsInQueues == 0 && nPayloadsInQueues == 0);
+            return (nItemsInQueues == 0);
         }
 
 
