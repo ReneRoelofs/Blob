@@ -188,8 +188,8 @@ namespace FmsBlobToContinental
         public string Text()
         {
             return string.Format(
-    "{0} location {1,2} {2}  {3,3}KPa-1 {4,3}KPa-2 (>={5,3}Kpa) {6,3}*C  enabled={7} CtiTireStatus={8} electFlt={9} leakageRage={10} treasholdDetection={11} tirestatus={12}",
-     timestamp, location, sidHex, pressure, pressure2, requiredPressure2, temperature, sensorEnabledStatus, CtiTireStatus, flt, lkrt, ptd, tst);
+    "{0} location {1,2} {2}  {3,3}KPa-1 {4,3}KPa-2 (>={5,3}Kpa) {6,3}*C  enabled={7} CtiTireStatus={8} electFlt={9} leakageRage={10} treasholdDetection={11} tirestatus={12} uploaded={13}",
+     timestamp, location, sidHex, pressure, pressure2, requiredPressure2, temperature, sensorEnabledStatus, CtiTireStatus, flt, lkrt, ptd, tst, timestampUploaded);
             //    0        1         2         3          4                  5            6                    7              8    9     10   11
 
         }
@@ -228,7 +228,7 @@ namespace FmsBlobToContinental
         /// <returns></returns>
         public Boolean SignificantChange(SensorData Prev, out string why)
         {
-            if (Prev.timestamp > this.timestamp || this.timestampUploaded > this.timestamp)
+            if (Prev.timestamp >= this.timestamp || this.timestampUploaded >= this.timestamp)
             {
                 // never update an older one; or one that has already been updated.
                 why = "outdated";

@@ -18,7 +18,7 @@ namespace FmsBlobToContinental
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 
-        static public int MinutesForMainLoop = 1; // After getblobs() wait for so long to try again
+        static public double MinutesForMainLoop = 1.0; // After getblobs() wait for so long to try again
 
 #if !DEBUG
         static public int MinutesForIgnoreSensorDataAfterDeserializing = 20; // data only taken into account if more then 20 minutes has passed (per sensor)\

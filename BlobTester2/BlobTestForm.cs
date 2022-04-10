@@ -125,7 +125,7 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             cts.Cancel();
             cts = new CancellationTokenSource();
             BlobDistributer.CancelationTokenSource = new CancellationTokenSource();
-            continentalUpdater.DoNowInALoop(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, cts.Token);
+            continentalUpdater.DoNowInALoop(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, tbBusFilter.Text,  cts.Token);
 
           //  //do
           //  {

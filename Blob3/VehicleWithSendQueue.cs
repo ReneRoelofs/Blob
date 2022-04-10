@@ -23,8 +23,8 @@ namespace Blob3
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-     //   [XmlIgnore]
-     //   private ConcurrentQueue<Payload> payloadQueue = new ConcurrentQueue<Payload>();
+        //   [XmlIgnore]
+        //   private ConcurrentQueue<Payload> payloadQueue = new ConcurrentQueue<Payload>();
 
         private ConcurrentQueue<BlobItem> blobItemQueue = new ConcurrentQueue<BlobItem>(); // the main queue of incoming blobs, handled one by one. in DownloadBlobItem
         public Boolean useTimestampNow;
@@ -38,7 +38,7 @@ namespace Blob3
 
         private DateTime updateFailed
         {
-            get 
+            get
             {
                 return _updateFailed;
             }
@@ -97,7 +97,7 @@ namespace Blob3
         public void StartSenderTasks()
         {
             Task.Factory.StartNew(() => DownloadBlobItem());
-         //   Task.Factory.StartNew(() => SendPayloadToContinental());
+            //   Task.Factory.StartNew(() => SendPayloadToContinental());
         }
 
         /// <summary>
@@ -232,24 +232,24 @@ namespace Blob3
             //-
             foreach (SensorData newSensorData in sensorsInThisPayload)
             {
-                SensorData sensorDataInVehicle = this.sensorDataList.Find(S => S.location == newSensorData.location);
-                newSensorData.CopyDataFromPrev(sensorDataInVehicle);
+                SensorData latestSendSensorData = this.sensorDataList.Find(S => S.location == newSensorData.location);
+                newSensorData.CopyDataFromPrev(latestSendSensorData);
 
                 if (useTimestampNow)
                 {
                     newSensorData.why = "TIMENOW";
                 }
-                if (sensorDataInVehicle == null)
+                if (latestSendSensorData == null)
                 {
                     newSensorData.why = "NEW";
                     newSensorData.doSendData = true;
                 }
-                if (sensorDataInVehicle != null)
+                if (latestSendSensorData != null)
                 {
-                    if (newSensorData.SignificantChange(sensorDataInVehicle, out newSensorData.why))
+                    if (newSensorData.SignificantChange(latestSendSensorData, out newSensorData.why))
                     {
-                        // log.DebugFormat("NEW {1} {0}", sensorData.Text(),why);
-                        // log.DebugFormat("OLD {1} {0}", prevSend.Text(),why);
+                        log.DebugFormat("NEW {1} {0}", newSensorData.Text(), newSensorData.why);
+                        log.DebugFormat("OLD {1} {0}", latestSendSensorData.Text(), newSensorData.why);
                         newSensorData.doSendData = true;
                     }
                 }
@@ -259,7 +259,7 @@ namespace Blob3
                 if (newSensorData.doSendData)
                 {
                     SendSensorDataToContinental(newSensorData, useTimestampNow);
-                    Statics.ReplaceSensorInList(sensorDataInVehicle, newSensorData);
+                    Statics.ReplaceSensorInList(latestSendSensorData, newSensorData);
                     if (UpdateFailedRecently())
                     {
                         break;
@@ -268,9 +268,9 @@ namespace Blob3
                 //+
                 //--- replace sensorDataList with this one.
                 //-
-                if (sensorDataInVehicle != null)
+                if (latestSendSensorData != null)
                 {
-                    this.sensorDataList.Remove(sensorDataInVehicle);
+                    this.sensorDataList.Remove(latestSendSensorData);
                 }
                 this.sensorDataList.Add(newSensorData);
             }

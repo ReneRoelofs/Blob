@@ -87,8 +87,8 @@ namespace BlobDistributer
                     ContinentalUpdater continentalUpdater = new ContinentalUpdater();
                     Task.Run(() =>
                     {
-                        Thread.Sleep(TimeSpan.FromSeconds(60));
-                        continentalUpdater.DoNowInALoop(testProd: testProd, BlobHandler.BlobDistributer.CancelationTokenSource.Token);
+                        Thread.Sleep(TimeSpan.FromSeconds(10));
+                        continentalUpdater.DoNowInALoop(testProd: testProd,onlyVehicle:"", BlobHandler.BlobDistributer.CancelationTokenSource.Token);
                     }
                     );
                 }

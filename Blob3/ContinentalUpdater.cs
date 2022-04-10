@@ -157,7 +157,7 @@ namespace Blob3
         /// <param name="testProd"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task DoNowInALoop(TestProd testProd, CancellationToken ct)
+        public async Task DoNowInALoop(TestProd testProd, string onlyVehicle, CancellationToken ct)
         {
             containerClient = BlobHandler.Statics.GetContainerClient(testProd);
             List<BlobItem> items = new List<BlobItem>();
@@ -179,25 +179,20 @@ namespace Blob3
                     since,
                     until,
                     downloadToFile: false,
-                    onlyVehicle: "",
+                    onlyVehicle: onlyVehicle,
                     ct);
 
                 getterStopWatch.Stop();
                 getterAmmount = items.Count;
 
-                while (!Empty())
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-                    if (ct.IsCancellationRequested)
-                    {
-                        break;
-                    }
-                }
+              
                 if (!ct.IsCancellationRequested)
                 {
+                    int partialDelay = (int)(Statics.MinutesForMainLoop*60.0 / 10.0);
+                    log.DebugFormat("Waiting for {0} minutes to go again", Statics.MinutesForMainLoop);
                     for (int i = 0; i < 10; i++)
                     {
-                        Thread.Sleep(TimeSpan.FromSeconds(Statics.MinutesForMainLoop / 10)); // 
+                        Thread.Sleep(TimeSpan.FromSeconds(partialDelay));//
                         if (ct.IsCancellationRequested)
                         {
                             break;
@@ -208,9 +203,17 @@ namespace Blob3
                 if (ct.IsCancellationRequested)
                 {
                     log.Info("Cancelation requested");
+                    break;
                 }
-
-
+                while (!Empty())
+                {
+                    log.DebugFormat("Waiting until empty. ");
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                    if (ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                }
             }
         }
 
