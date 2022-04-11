@@ -8,7 +8,6 @@ using System.ServiceProcess;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Blob3;
 using BlobHandler;
 
 namespace BlobDistributer
@@ -33,7 +32,7 @@ namespace BlobDistributer
     /// this is the first step in the Continental blob tire pressure flow.
     /// After that the payloads of the blobs can be send to continental.
     /// The blobs in the distributer are loaded in a completely random order, not in any time-based order whatsover.
-    /// therefore this feed cannot be used to update continental directly. That is done in another flow, handling the
+    /// therefore this feed cannot be used to update continental directly. That is done in ContiTirePressureUpdater, handling the
     /// time of the payloads.
     /// </summary>
     public partial class BlobDistributerService : ServiceBase
@@ -76,30 +75,6 @@ namespace BlobDistributer
                 //-
                 Task.Run(() => distributer.DistributeAllNow(
                     BlobHandler.BlobDistributer.CancelationTokenSource.Token, doLoop: true));
-
-
-                if (Properties.Settings.Default.SendToContinental)
-                {
-                    //+
-                    //--- run the continental updater in a loop
-                    //-
-                    log.InfoFormat("Sending data to continental after 1 minute");
-                    ContinentalUpdater continentalUpdater = new ContinentalUpdater();
-                    Task.Run(() =>
-                    {
-                        Thread.Sleep(TimeSpan.FromSeconds(10));
-                        continentalUpdater.DoNowInALoop(testProd: testProd,onlyVehicle:"", BlobHandler.BlobDistributer.CancelationTokenSource.Token);
-                    }
-                    );
-                }
-                else
-                {
-                    log.InfoFormat("Not sending data to continental use setting SendToContinental to change this");
-
-                }
-
-
-
             }
             catch (Exception ex)
             {
@@ -127,7 +102,7 @@ namespace BlobDistributer
                     Thread.Sleep(TimeSpan.FromSeconds(3));
                 }
             }
-            log.Info("**************** STOP   *************     Versie   " + RR.RR_Assembly.AssemblyVersionPlusBuildDateTimeEXE);
+            log.Info("**************** STOPPED   *************     Versie   " + RR.RR_Assembly.AssemblyVersionPlusBuildDateTimeEXE);
         }
 
         /// <summary>

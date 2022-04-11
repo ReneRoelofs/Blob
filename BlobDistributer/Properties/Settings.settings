@@ -17,8 +17,5 @@
     <Setting Name="DelayWhenNothingFound" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">45</Value>
     </Setting>
-    <Setting Name="SendToContinental" Type="System.Boolean" Scope="Application">
-      <Value Profile="(Default)">True</Value>
-    </Setting>
   </Settings>
 </SettingsFile>

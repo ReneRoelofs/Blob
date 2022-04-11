@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace BlobDistributer.Properties {
+namespace BlobContinentalUpdater.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -34,7 +34,7 @@ namespace BlobDistributer.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool DetailedLogging {
             get {
                 return ((bool)(this["DetailedLogging"]));
@@ -43,28 +43,19 @@ namespace BlobDistributer.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("/1111")]
-        public string DetailedLoggingFilter {
-            get {
-                return ((string)(this["DetailedLoggingFilter"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute(@"een puntkomma gescheiden lijst van fragementen die in een blobnaam moeten voorkomen wil deze gelogd worden. Als deze leeg is worden alle blob-moves geloged hetgeen een extreme impact op de performance heeft. Goed voorbeeld /9601;/1111 voor voertuigen of _2234275_ voor filter op pilotfish vehiclegateway")]
-        public string DetailedLoggingFilterComment {
-            get {
-                return ((string)(this["DetailedLoggingFilterComment"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("45")]
+        [global::System.Configuration.DefaultSettingValueAttribute("60")]
         public int DelayWhenNothingFound {
             get {
                 return ((int)(this["DelayWhenNothingFound"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("9602")]
+        public string DetailedLoggingFilter {
+            get {
+                return ((string)(this["DetailedLoggingFilter"]));
             }
         }
     }

@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlobDistributer", "BlobDist
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FmsBlobToContinental", "FmsBlobToContinental\FmsBlobToContinental.csproj", "{70276DBE-6967-4D4C-8CC7-1882C76D78A3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlobContinentalUpdater", "BlobContintentalUpdater\BlobContinentalUpdater.csproj", "{558CDD02-EA2D-45FF-94EA-AB764EDE1C12}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70276DBE-6967-4D4C-8CC7-1882C76D78A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{558CDD02-EA2D-45FF-94EA-AB764EDE1C12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{558CDD02-EA2D-45FF-94EA-AB764EDE1C12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{558CDD02-EA2D-45FF-94EA-AB764EDE1C12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{558CDD02-EA2D-45FF-94EA-AB764EDE1C12}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

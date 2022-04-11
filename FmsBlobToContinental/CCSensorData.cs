@@ -108,7 +108,26 @@ namespace FmsBlobToContinental
         /// <summary>
         /// Sensor enable status
         /// </summary>
-        public Int64 ses { get; set; } // attrib sensorEnabledStatus
+        /// 
+        private Int64 _ses;
+        public Int64 ses
+        { // attrib sensorEnabledStatus
+            get
+            {
+                return _ses;
+            }
+            set
+            {
+                _ses = value;
+#if DEBUG
+                if (value == 2)
+                {
+                    int d = 0;
+                    d++;
+                }
+#endif
+            }
+        }
 
         /// <summary>
         /// Sensor hit rate
@@ -185,6 +204,8 @@ namespace FmsBlobToContinental
         [JsonIgnore]
         public string rawFC42 { get; set; }
 
+        [JsonIgnore]
+        TTMData ttmData = null;
         public string Text()
         {
             return string.Format(
@@ -235,19 +256,24 @@ namespace FmsBlobToContinental
                 return false;
             }
 
-            if (this.flt != Prev.flt) { why = "flt"; return true; } // electrical fault value changed;
-            if (this.lkrt != Prev.lkrt) { why = "lkrt"; return true; } // leakage rate value changed;
-            if (this.ptd != Prev.ptd) { why = "ptd"; return true; } // pressure threashold detection changed
-            if (this.ses != Prev.ses) { why = "ses"; return true; } //  sensor enanbled status changed;
-            if (this.tst != Prev.tst) { why = "tst"; return true; } //  tire status changed;
+            if (this.flt != Prev.flt) { why = string.Format("flt {0} to {1}",Prev.flt, this.flt); return true; } // electrical fault value changed;
+            if (this.lkrt != Prev.lkrt) { why = string.Format("lkrt {0} to {1}", Prev.lkrt, this.lkrt); return true; } // leakage rate value changed;
+            if (this.ptd != Prev.ptd) { why = string.Format("ptd {0} to {1}", Prev.ptd, this.ptd); return true; } // pressure threashold detection changed
+            if (this.ses != Prev.ses) { why = string.Format("ses {0} to {1}", Prev.ses, this.ses); return true; } //  sensor enanbled status changed;
+            if (this.tst != Prev.tst) { why = string.Format("tst {0} to {1}", Prev.tst, this.tst); return true; } //  tire status changed;
 
-            if (changePercentage(this.pressure, Prev.pressure) > 10) { why = "pres"; return true; } // more then 10 percent in pressure changed
-            if (changePercentage(this.temperature, Prev.temperature) > 10) { why = "temp"; return true; } // more hten 10 percent in temperature changed.
+            if (changePercentage(this.pressure, Prev.pressure) > 10) { why = string.Format("pres {0} to {1}", Prev.pressure, this.pressure); return true; } // more then 10 percent in pressure changed
+            if (changePercentage(this.temperature, Prev.temperature) > 10) { why = string.Format("temp {0} to {1}", Prev.temperature, this.temperature); return true; } // more hten 10 percent in temperature changed.
             why = "not";
 
             return false;
         }
 
+        /// <summary>
+        /// kopieer waarden uit het vorige record.
+        /// en dan opnieuw uit dit record. maar daarbij wordt de TTM genegeerd dus die moet ook nog daarna gedaan worden.
+        /// </summary>
+        /// <param name="Prev"></param>
         public void CopyDataFromPrev(SensorData Prev)
         {
             if (Prev == null)
@@ -269,6 +295,9 @@ namespace FmsBlobToContinental
             this.SetConditionFromFEF4(rawFEF4);
 
             this.timestampUploaded = Prev.timestampUploaded;
+
+            this.sid = Prev.sid;
+            this.sidHex = Prev.sidHex;
 
         }
 
@@ -341,6 +370,13 @@ namespace FmsBlobToContinental
             if (debug) { log.Info(Statics.GetBinarystring(value)); }
 
             sensorEnabledStatus = Statics.GetBitsAt(value, 32, 2, true, debug, "sensor Enabled Status"); //10
+#if DEBUG
+            if (sensorEnabledStatus == 2 && debug == false)
+            {
+                //      SetConditionFromFEF4(value, true);// extra debug
+                //_ = Statics.GetBitsAt(value, 32, 2, true, true, "sensor Enabled Status"); // extra debug
+            }
+#endif
             CtiTireStatus = Statics.GetBitsAt(value, 34, 2, true, debug, "CtiTireStatus");
             ctiTireElectricalFault = Statics.GetBitsAt(value, 36, 2, true, debug, "ctiTireElectricalFault");
             extendedTirePressureSupport = Statics.GetBitsAt(value, 38, 2, true, debug, "extendedTirePressureSupport");
@@ -380,30 +416,38 @@ namespace FmsBlobToContinental
             rawFC42 = value;
         }
 
+
         public void EnrichWithTTM(List<TTMData> ttmDataList)
         {
-            TTMData ttmData = ttmDataList.Find(T => T.tireLocation == this.location);
+            ttmData = ttmDataList.Find(T => T.tireLocation == this.location);
+            EnrichWithTTM();
+        }
+
+        public void EnrichWithTTM()
+        {
             if (ttmData != null)
             {
                 this.sid = ttmData.TTMID.ToString();
                 this.sidHex = ttmData.TTMID.ToString("X");
-                this.temperature = ttmData.TTMTemperature;
-                if (ttmData.TTMAlarmWarning != 0x04)
-                {
-                    this.ses = 1;
-                }
-                else
-                {
-                    this.ses = 0;
-                }
+                //if (ttmData.TTMAlarmWarning != 0x04)
+                //{
+                //    this.ses = 1;
+                //}
+                //else
+                //{
+                //    this.ses = 0;
+                //}
                 if (this.temperature == 0)
                 {
-                    this.temperature = ttmData.TTMTemperature;
+                    if (ttmData.TTMState != 255)
+                    {
+                        this.temperature = ttmData.TTMTemperature;
+                    }
                 }
             }
         }
 
-      
+
     }
 
     public class TTMData

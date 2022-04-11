@@ -170,7 +170,7 @@ namespace Blob3
                 }
                 else
                 {
-                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                    Task.Delay(TimeSpan.FromSeconds(1));
                 }
             }
         }
@@ -224,17 +224,46 @@ namespace Blob3
             //--- inv: Masterdata for this vehicle is ok.
             //---      now get the sensordata
             //-
-            List<SensorData> sensorsInThisPayload;
-            Boolean XGetListResult = payLoad.GetSensorsList(useTimestampNow, out sensorsInThisPayload);
+
+
+
+            //  List<SensorData> sensorsInThisPayload;
+            //  Boolean XGetListResult = payLoad.GetSensorsList(useTimestampNow, out sensorsInThisPayload);
+
+            payLoad.EnrichSensorWithTTM();// even alle TTM data over de andere data heenschrijven.
+
             //+
             //--- send any new or alarm (significatnChange) data directly to Continental, but wait for the TIMEOUT records.
             //---
             //-
-            foreach (SensorData newSensorData in sensorsInThisPayload)
+            foreach (SensorData newSensorData in payLoad.sensorsDataList)  // sensorsInThisPayload)
             {
                 SensorData latestSendSensorData = this.sensorDataList.Find(S => S.location == newSensorData.location);
-                newSensorData.CopyDataFromPrev(latestSendSensorData);
+#if DEBUG
+                if (newSensorData.ses == 2)
+                {
+                    int debug = 0;
+                    debug++;
+                }
+#endif
 
+                newSensorData.CopyDataFromPrev(latestSendSensorData);
+                newSensorData.EnrichWithTTM();// even alle TTM nogmaals data over de andere data heenschrijven.
+
+#if DEBUG
+                if (latestSendSensorData != null && latestSendSensorData.ses == 2)
+                {
+                    int debug = 0;
+                    debug++;
+                }
+#endif
+#if DEBUG
+                if (newSensorData.ses == 2)
+                {
+                    int debug = 0;
+                    debug++;
+                }
+#endif
                 if (useTimestampNow)
                 {
                     newSensorData.why = "TIMENOW";
@@ -242,7 +271,10 @@ namespace Blob3
                 if (latestSendSensorData == null)
                 {
                     newSensorData.why = "NEW";
-                    newSensorData.doSendData = true;
+                    if (!string.IsNullOrEmpty(newSensorData.sid))
+                    {
+                        newSensorData.doSendData = true;
+                    }
                 }
                 if (latestSendSensorData != null)
                 {
@@ -250,7 +282,10 @@ namespace Blob3
                     {
                         log.DebugFormat("NEW {1} {0}", newSensorData.Text(), newSensorData.why);
                         log.DebugFormat("OLD {1} {0}", latestSendSensorData.Text(), newSensorData.why);
-                        newSensorData.doSendData = true;
+                        if (!string.IsNullOrEmpty(newSensorData.sid))
+                        {
+                            newSensorData.doSendData = true;
+                        }
                     }
                 }
                 //+
@@ -259,11 +294,19 @@ namespace Blob3
                 if (newSensorData.doSendData)
                 {
                     SendSensorDataToContinental(newSensorData, useTimestampNow);
+#if DEBUG
+                    if (newSensorData.ses == 2)
+                    {
+                        int debug = 0;
+                        debug++;
+                    }
+#endif
                     Statics.ReplaceSensorInList(latestSendSensorData, newSensorData);
                     if (UpdateFailedRecently())
                     {
                         break;
                     }
+
                 }
                 //+
                 //--- replace sensorDataList with this one.
@@ -285,14 +328,16 @@ namespace Blob3
         {
             foreach (SensorData sensorData in this.sensorDataList)
             {
-                if (sensorData.timestampUploaded.AddMinutes(Statics.MinutesForIgnoreSensorDataAfterDeserializing) < sensorData.timestamp)
+                if (!string.IsNullOrEmpty(sensorData.sid))
                 {
-                    sensorData.why = "TIME";
-                    SendSensorDataToContinental(sensorData, useTimestampNow);
-
-                    if (UpdateFailedRecently())
+                    if (sensorData.timestampUploaded.AddMinutes(Statics.MinutesForIgnoreSensorDataAfterDeserializing) < sensorData.timestamp)
                     {
-                        break;
+                        sensorData.why = "TIME";
+                        SendSensorDataToContinental(sensorData, useTimestampNow);
+                        if (UpdateFailedRecently())
+                        {
+                            break;
+                        }
                     }
                 }
             }
@@ -323,12 +368,13 @@ namespace Blob3
             if (response.IsSuccessful)
             {
                 this.UpdateSimpleInfo(sensorData.location, sensorData.sidHex, sensorData.timestamp, sensorData.temperature, sensorData.pressure);
-                log.InfoFormat("Veh={0,4} Loc={1,2} Why={2,4} Time={3} Url={4} Status={5} ",
+                log.InfoFormat("Veh={0,4} Loc={1,2} Time={3} Url={4} SensorHex={5} Status={6} Why={2,4} ",
                     this.vehicleNumber,
                     sensorData.location,
                     sensorData.why,
                     sensorData.timestamp,
                     client.BaseUrl,
+                    sensorData.sidHex,
                     response.StatusCode);
                 if (Statics.DetailedContiLogging)
                 {
@@ -341,7 +387,7 @@ namespace Blob3
             else // Not Response.IsSuccesfull // more feedback and no sensorupdate
             {
                 this.updateFailed = DateTime.Now;
-                log.WarnFormat("Veh={0,4} Loc={1,2} Why={2,4} Time={3} Url={4} SensorHex={5} Status={6} Response={7}",
+                log.WarnFormat("Veh={0,4} Loc={1,2} Time={3} Url={4} SensorHex={5} Status={6} Why={2,4} Response={7}",
                     this.vehicleNumber,
                     sensorData.location,
                     sensorData.why,
@@ -358,10 +404,8 @@ namespace Blob3
                         sensorData.Text());
                     //FeedbackResponse(client, response);
                 }
-
             }
             return response.IsSuccessful;
-
         }
 
         /// <summary>

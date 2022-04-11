@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Statics = FmsBlobToContinental.Statics;
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
@@ -26,6 +27,7 @@ namespace Blob3
         private ConcurrentQueue<BlobItem> myQueue = new System.Collections.Concurrent.ConcurrentQueue<BlobItem>();
         List<Task> mySenderTasks = new List<Task>();
         public VehicleSenderList vehicleSenderList = new VehicleSenderList();
+        public Boolean running = false;
 
         public ContinentalUpdater()
         {
@@ -40,6 +42,8 @@ namespace Blob3
         int getterAmmount = 0;
 
 
+
+        /*****
         /// <summary>
         /// Get all data, used for service and debugging. Just get the data, sendit, and do it again. Build a list First.
         /// </summary>
@@ -117,8 +121,10 @@ namespace Blob3
                     getterAmmount = items.Count;
                     if (doLoop)
                     {
+                        log.Debug("DoLoop A Start");
                         while (!Empty())
                         {
+                            log.Debug("DoLoop B !Empty"); 
                             await Task.Delay(TimeSpan.FromSeconds(1));
                         }
                         if (ct.IsCancellationRequested)
@@ -126,9 +132,11 @@ namespace Blob3
                             break;
                         }
 
+                        log.Debug("DoLoop C Empty");
                         for (int i = 0; i < 10; i++)
                         {
-                            Thread.Sleep(TimeSpan.FromSeconds(Statics.MinutesForMainLoop / 10)); // 
+                            log.DebugFormat("DoLoop D {i}",i+1);
+                            await Task.Delay(TimeSpan.FromSeconds(Statics.MinutesForMainLoop / 10)); // 
                             if (ct.IsCancellationRequested)
                             {
                                 break;
@@ -150,6 +158,46 @@ namespace Blob3
                 }
             }
         }
+        */
+
+
+        /// <summary>
+        /// Update to continental in a loop for the pas half hour. Used in the form for testing
+        /// </summary>
+        /// <param name="testProd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task DoNowInALoopAsych(TestProd testProd, string onlyVehicle, CancellationToken ct, DateTime? paramSince = null)
+        {
+            try
+            {
+                running = true;
+                List<BlobItem> items = new List<BlobItem>();
+                containerClient = BlobHandler.Statics.GetContainerClient(testProd);
+
+                while (!ct.IsCancellationRequested)
+                {
+                    DateTime until = StartOneRun(paramSince);
+                    BlobHandler.BlobItemList blobItemlist = new BlobHandler.BlobItemList(DownloadAndEnqueueToSend);
+                    items = await blobItemlist.GetBlobItemsASync(
+                        testProd,
+                        since,
+                        until,
+                        downloadToFile: false,
+                        onlyVehicle: onlyVehicle,
+                        ct);
+
+                    DoneOneRun(items.Count);
+                    WaitForEmpty(ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error("", ex);
+            }
+            running = false;
+
+        }
 
         /// <summary>
         /// Update to continental in a loop for the pas half hour. Used in the service.
@@ -157,69 +205,110 @@ namespace Blob3
         /// <param name="testProd"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task DoNowInALoop(TestProd testProd, string onlyVehicle, CancellationToken ct)
+        public void DoNowInALoop(TestProd testProd, string onlyVehicle, CancellationToken ct, DateTime? paramSince=null)
         {
-            containerClient = BlobHandler.Statics.GetContainerClient(testProd);
-            List<BlobItem> items = new List<BlobItem>();
-
-            while (!ct.IsCancellationRequested)
+            try
             {
-                getterStartTime = DateTime.Now;
-                getterStopWatch.Restart();
+                containerClient = BlobHandler.Statics.GetContainerClient(testProd);
+                running = true;
+                List<BlobItem> items = new List<BlobItem>();
 
+                while (!ct.IsCancellationRequested)
+                {
+                    DateTime until = StartOneRun(paramSince);
+                    BlobHandler.BlobItemList blobItemlist = new BlobHandler.BlobItemList(DownloadAndEnqueueToSend);
+                    items = blobItemlist.GetBlobItems(
+                        testProd,
+                        since,
+                        until,
+                        downloadToFile: false,
+                        onlyVehicle: onlyVehicle,
+                        ct);
+
+                    DoneOneRun(items.Count);
+                    WaitForEmpty(ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error("", ex);
+            }
+            running = false;
+        }
+
+        private DateTime StartOneRun(DateTime? paramSince)
+        {
+            getterStartTime = DateTime.Now;
+            getterStopWatch.Restart();
+
+            if (paramSince != null)
+            {
+                since = (DateTime)paramSince;
+            }
+            else
+            {
                 since = DateTime.Now.ToUniversalTime().AddMinutes(-30);
-                DateTime until = since.AddDays(1);
+            }
+            DateTime until = since.AddDays(1);
 
-                Statics.SaveSensorList();
-                Statics.SaveVehicleList();
+            Statics.SaveSensorList();
+            Statics.SaveVehicleList();
+            return until;
+        }
 
-                BlobHandler.BlobItemList blobItemlist = new BlobHandler.BlobItemList(DownloadAndEnqueueToSend);
-                await blobItemlist.GetBlobItemsASync(
-                    testProd,
-                    since,
-                    until,
-                    downloadToFile: false,
-                    onlyVehicle: onlyVehicle,
-                    ct);
+        private void DoneOneRun(int nItems)
+        {
+            getterStopWatch.Stop();
+            getterAmmount = nItems;
 
-                getterStopWatch.Stop();
-                getterAmmount = items.Count;
+        }
 
-              
-                if (!ct.IsCancellationRequested)
+        private void WaitForEmpty(CancellationToken ct)
+        {
+            if (!ct.IsCancellationRequested)
+            {
+                int partialDelay = (int)(Statics.MinutesForMainLoop * 60.0 / 10.0);
+                log.DebugFormat("Waiting for {0} minutes to go again in 10 steps of {1} seconds ", Statics.MinutesForMainLoop, partialDelay);
+                for (int i = 0; i < 10; i++)
                 {
-                    int partialDelay = (int)(Statics.MinutesForMainLoop*60.0 / 10.0);
-                    log.DebugFormat("Waiting for {0} minutes to go again", Statics.MinutesForMainLoop);
-                    for (int i = 0; i < 10; i++)
-                    {
-                        Thread.Sleep(TimeSpan.FromSeconds(partialDelay));//
-                        if (ct.IsCancellationRequested)
-                        {
-                            break;
-                        }
-                    }
-                    //await Task.Delay(TimeSpan.FromMinutes(FmsBlobToContinental.Statics.MinutesForMainLoop));
-                }
-                if (ct.IsCancellationRequested)
-                {
-                    log.Info("Cancelation requested");
-                    break;
-                }
-                while (!Empty())
-                {
-                    log.DebugFormat("Waiting until empty. ");
-                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                    MyWait(partialDelay);//
                     if (ct.IsCancellationRequested)
                     {
                         break;
                     }
                 }
+                log.DebugFormat("Waited for {0} minutes to go again", Statics.MinutesForMainLoop);
+            }
+            if (ct.IsCancellationRequested)
+            {
+                log.Info("Cancelation requested");
+            }
+            while (!Empty())
+            {
+                log.DebugFormat("Waiting until empty. ");
+                MyWait(1000);//
+                if (ct.IsCancellationRequested)
+                {
+                    break;
+                }
+            }
+        }
+
+        private void MyWait(int sec)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            //Thread.Sleep(TimeSpan.FromMilliseconds(ms));
+            Task.Delay(TimeSpan.FromSeconds(sec));
+            while (sw.Elapsed.TotalSeconds < sec)
+            {
+                Application.DoEvents();
             }
         }
 
 
         private int nItemsInQueues = 0;
-       // private int nPayloadsInQueues = 0;
+        // private int nPayloadsInQueues = 0;
 
         /// <summary>
         /// How many items a in the sendqueue
@@ -230,14 +319,14 @@ namespace Blob3
             lock (vehicleSenderList)
             {
                 nItemsInQueues = 0;
-               // nPayloadsInQueues = 0;
+                // nPayloadsInQueues = 0;
 
                 vehicleSenderList.Sort((x, y) => x.vehicleNumber.CompareTo(y.vehicleNumber));
 
                 foreach (VehicleWithSendQueue vc in vehicleSenderList)
                 {
                     nItemsInQueues += vc.blobItemQueueCount;
-                   // nPayloadsInQueues += vc.PayloadQueueCount;
+                    // nPayloadsInQueues += vc.PayloadQueueCount;
                     // if (vc.PayloadQueueCount() != 0)
                     {
                         //     vc.WriteStatusToFeedback();

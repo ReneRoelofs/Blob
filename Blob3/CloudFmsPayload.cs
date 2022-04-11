@@ -174,7 +174,7 @@ public class Payload
                 }
             }
         }
-    }
+        }
 
 
     //public string sSensorData
@@ -268,11 +268,7 @@ public class Payload
             SensorMasterData smd = vehicle.GetOrAddSensorMasterData(ttmData.TTMID, ttmData.GraphicalPosition.ToString("X"),
                 out Boolean tmpMetaDataChanged, out string tmpWhy);
             metadataChanged = metadataChanged || tmpMetaDataChanged;
-            if (tmpMetaDataChanged)
-            {
-                why += ttmData.GraphicalPosition + " " + tmpWhy + ";";
-            }
-
+            why += " " + tmpWhy;
         }
 
         if (metadataChanged)
@@ -285,12 +281,16 @@ public class Payload
 
             if (Statics.DetailedContiLogging)
             {
-                log.DebugFormat("Veh={0,4} Why={1,4} Url={2} Status={3} ",
+                log.DebugFormat("Veh={0,4} MasterDataUpdate  Url={1} Status={2} {3}",
                     vehicleNr,
-                    why,
                     vehicle.clientMd().BaseUrl,
-                    response.StatusCode);
-                log.DebugFormat("Json={0}",
+                    response.StatusCode, why);
+                    foreach (TTMData ttmData in this.ttmDataList)
+                    {
+                        log.DebugFormat("Veh={0,4} pos={1,2} Sid={2} SidHex={2:X}",
+                            vehicleNr, ttmData.tireLocation, ttmData.TTMID);
+                    }
+                    log.DebugFormat("Json={0}",
                     sJson.Replace("\r\n", ""));
 
             }
@@ -323,8 +323,9 @@ public class Payload
         {
             if (!String.IsNullOrEmpty(sensorData.sid) && sensorData.sid != "0" && sensorData.sid != "1")
             {
-                SensorData prevSend = Statics.getSensor(sensorData); // get previous data or add this one.
                 sensorsInThisPayload.Add(sensorData);
+
+                //SensorData prevSend = Statics.getSensor(sensorData); // get previous data or add this one.
 
                 /*
                 if (prevSend == sensorData)
@@ -344,8 +345,6 @@ public class Payload
                 }*/
             }
         }
-
-
         return result;
     }
 

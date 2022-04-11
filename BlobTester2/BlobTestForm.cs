@@ -122,35 +122,16 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
 
         private async void bGetBlobs_Click(object sender, EventArgs e)
         {
-            cts.Cancel();
-            cts = new CancellationTokenSource();
-            BlobDistributer.CancelationTokenSource = new CancellationTokenSource();
-            continentalUpdater.DoNowInALoop(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, tbBusFilter.Text,  cts.Token);
-
-          //  //do
-          //  {
-          //      DateTime? targetDate = GetFormTargetDate();
-
-            //      //+
-            //      //--- start background task to get the items in a loop or not
-            //      //-
-            //      await continentalUpdater.GetItemsAndUpdateContinentalAsync(
-            //          testProd: rbTestBlob.Checked ? TestProd.Test : TestProd.Prod,
-            //          onlyRecent: cbUseRecentDate.Checked, 
-            //          paramSince: cbUseRecentDate.Checked ? null : targetDate,
-            //          until: ((DateTime)targetDate).AddDays((int)spDays.Value),
-            //          onlyBus: tbBusFilter.Text,
-            //          doLoop: cbDistributeLoop.Checked);
-
-            //      bsVehicleInQueue.DataSource = continentalUpdater.vehicleSenderList;
-
-
-            //      while (!continentalUpdater.Empty())
-            //      {
-            //         await Task.Delay(TimeSpan.FromSeconds(1));
-            //      }
-            //  }
-            ////  while (cbDistributeLoop.Checked);
+            if (continentalUpdater.running)
+            {
+                cts.Cancel();
+            }
+            else
+            {
+                cts = new CancellationTokenSource();
+                await continentalUpdater.DoNowInALoopAsych(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, tbBusFilter.Text, cts.Token);
+                //ALS SERVICE: continentalUpdater.DoNowInALoop(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, tbBusFilter.Text, cts.Token);
+            }
         }
 
         private DateTime GetFormTargetDate()

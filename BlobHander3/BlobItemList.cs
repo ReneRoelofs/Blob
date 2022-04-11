@@ -45,7 +45,31 @@ namespace BlobHandler
         {
 
             List<BlobItem> result = new List<BlobItem>();
+             await Task.Run(() =>
+            {
+                GetBlobItems(testProd, sinceUTC, untilUTC, downloadToFile, onlyVehicle, ct);
+            }
+            );
+            log.InfoFormat("GetBlobs() finished");
+            return result;
+        }
+
+
+        public List<BlobItem> GetBlobItems(
+            TestProd testProd,
+            DateTime sinceUTC,
+            DateTime? untilUTC,
+            bool downloadToFile,
+            string onlyVehicle,
+            CancellationToken ct)
+        {
             containerClient = Statics.GetContainerClient(testProd);
+            //+
+            //--- get all blobs in prefix '2021/12/08'
+            //-
+            int i = 1;
+            BlobFileName blobFilename = new BlobFileName();
+            List<BlobItem> result = new List<BlobItem>();
             Boolean UntilNow = false;
             if (untilUTC == null)
             {
@@ -53,99 +77,90 @@ namespace BlobHandler
                 untilUTC = DateTime.Now;
             }
 
-            BlobFileName blobFilename = new BlobFileName();
-
-            await Task.Run(() =>
+            while (sinceUTC < untilUTC)
             {
-                //+
-                //--- get all blobs in prefix '2021/12/08'
-                //-
-                int i = 1;
-                while (sinceUTC < untilUTC)
+
+                string myPrefix = Statics.DirForStorage(sinceUTC);
+                // {
+                //   if (onlyRecent)
+                // {
+                if (!string.IsNullOrEmpty(onlyVehicle))
                 {
-                    string myPrefix = Statics.DirForStorage(sinceUTC);
-                    // {
-                    //   if (onlyRecent)
-                    // {
-                    if (!string.IsNullOrEmpty(onlyVehicle))
-                    {
-                        log.InfoFormat("GetBlobs() since {0:u} up to {1:u} prefix {2} only for vehicle {3}", sinceUTC, untilUTC, myPrefix, onlyVehicle);
-                    }
-                    else
-                    {
-                        log.InfoFormat("GetBlobs() since {0:u} up to {1:u} prefix {2}", sinceUTC, untilUTC, myPrefix);
-                    }
+                    log.InfoFormat("GetBlobs() since {0:u} up to {1:u} prefix {2} only for vehicle {3}", sinceUTC, untilUTC, myPrefix, onlyVehicle);
+                }
+                else
+                {
+                    log.InfoFormat("GetBlobs() since {0:u} up to {1:u} prefix {2}", sinceUTC, untilUTC, myPrefix);
+                }
 
-                    //+
-                    //--- get the blobs en enumerate through them
-                    //-
-                    Azure.Pageable<BlobItem> allBlobs = containerClient.GetBlobs(BlobTraits.None, BlobStates.None, myPrefix);
-                    IEnumerator<BlobItem> enumerator = allBlobs.GetEnumerator();
-                    while (enumerator.MoveNext())
-                    {
-                        if (ct.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
-                        BlobItem blobItem = enumerator.Current;
-                        blobFilename.Name = blobItem.Name; // thus get the vehiclenumber and date from the filename.
-                        Boolean addToResult = true;
-
-                        //+
-                        //--- add them to result if conditions are met
-                        //-
-                        if (blobFilename.timeStamp <= sinceUTC)
-                        {
-                            addToResult = false;
-                        }
-                        if (blobFilename.timeStamp > untilUTC)
-                        {
-                            addToResult = false;
-                        }
-
-                        if (!string.IsNullOrEmpty(onlyVehicle) && !blobItem.Name.Contains("/" + onlyVehicle + "_"))
-                        {
-                            addToResult = false;
-                        }
-                        if (addToResult)
-                        {
-                            result.Add(blobItem);
-                            //  log.DebugFormat("#blobsSeen={0} #blobsSelected={1} blobName={2} Dated={3} ", 
-                            //      i, result.Count, blobItem.Name, blobItem.Properties.LastModified);
-                            if (OnHandleBlob != null)
-                            {
-                                OnHandleBlob(blobItem);
-                            }
-                            if (downloadToFile && blobFilename.vehicleNumber.ToString() == onlyVehicle)
-                            {
-                                DownloadToFile(blobItem, Properties.Settings.Default.DownloadDir);
-                            }
-                        }
-                        i++;
-                    }
-                    log.InfoFormat("GotBlobs   since {0:u} up to {1:u} ==> Total={2}", sinceUTC, untilUTC, result.Count);
-
-
-                    sinceUTC = sinceUTC.AddDays(1);
-                    if (UntilNow)
-                    {
-                        // update timestamp to keep getting the blobs even if it took a while
-                        untilUTC = DateTime.Now;
-                    }
-
+                //+
+                //--- get the blobs en enumerate through them
+                //-
+                Azure.Pageable<BlobItem> allBlobs = containerClient.GetBlobs(BlobTraits.None, BlobStates.None, myPrefix);
+                IEnumerator<BlobItem> enumerator = allBlobs.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
                     if (ct.IsCancellationRequested)
                     {
                         break;
                     }
-                }// While dateloop.
-                 //+
-                 //--- sort them by lastmodified to be sure to handle them in the correct order
-                 //-
-                result.Sort((x, y) => ((DateTimeOffset)x.Properties.LastModified).CompareTo((DateTimeOffset)y.Properties.LastModified));
-            }
-            );
-            log.InfoFormat("GetBlobs() finished");
+
+                    BlobItem blobItem = enumerator.Current;
+                    blobFilename.Name = blobItem.Name; // thus get the vehiclenumber and date from the filename.
+                    Boolean addToResult = true;
+
+                    //+
+                    //--- add them to result if conditions are met
+                    //-
+                    if (blobFilename.timeStamp <= sinceUTC)
+                    {
+                        addToResult = false;
+                    }
+                    if (blobFilename.timeStamp > untilUTC)
+                    {
+                        addToResult = false;
+                    }
+
+                    if (!string.IsNullOrEmpty(onlyVehicle) && !blobItem.Name.Contains("/" + onlyVehicle + "_"))
+                    {
+                        addToResult = false;
+                    }
+                    if (addToResult)
+                    {
+                        result.Add(blobItem);
+                        //  log.DebugFormat("#blobsSeen={0} #blobsSelected={1} blobName={2} Dated={3} ", 
+                        //      i, result.Count, blobItem.Name, blobItem.Properties.LastModified);
+                        if (OnHandleBlob != null)
+                        {
+                            OnHandleBlob(blobItem);
+                        }
+                        if (downloadToFile && blobFilename.vehicleNumber.ToString() == onlyVehicle)
+                        {
+                            DownloadToFile(blobItem, Properties.Settings.Default.DownloadDir);
+                        }
+                    }
+                    i++;
+                }
+                log.InfoFormat("GotBlobs   since {0:u} up to {1:u} ==> Total={2}", sinceUTC, untilUTC, result.Count);
+
+
+                sinceUTC = sinceUTC.AddDays(1);
+                if (UntilNow)
+                {
+                    // update timestamp to keep getting the blobs even if it took a while
+                    untilUTC = DateTime.Now;
+                }
+
+                if (ct.IsCancellationRequested)
+                {
+                    break;
+                }
+            }// While dateloop.
+             //+
+             //--- sort them by lastmodified to be sure to handle them in the correct order
+             //-
+
+            //result.Sort((x, y) => ((DateTimeOffset)x.Properties.LastModified).CompareTo((DateTimeOffset)y.Properties.LastModified));
             return result;
         }
 

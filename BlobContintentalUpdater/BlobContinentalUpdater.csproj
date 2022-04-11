@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{088FAC98-1C96-4188-81E4-445B2140A0A7}</ProjectGuid>
+    <ProjectGuid>{558CDD02-EA2D-45FF-94EA-AB764EDE1C12}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>BlobDistributer</RootNamespace>
-    <AssemblyName>BlobDistributer</AssemblyName>
+    <RootNamespace>BlobContinentalUpdater</RootNamespace>
+    <AssemblyName>BlobContinentalUpdater</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -44,6 +44,9 @@
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -54,17 +57,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BlobContinentalUpdaterService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="BlobContinentalUpdaterService.Designer.cs">
+      <DependentUpon>BlobContinentalUpdaterService.cs</DependentUpon>
+    </Compile>
     <Compile Include="Installer1.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Installer1.Designer.cs">
       <DependentUpon>Installer1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="BlobDistributerService.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="BlobDistributerService.Designer.cs">
-      <DependentUpon>BlobDistributerService.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -83,6 +86,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Blob3\ContinentalBlob.csproj">
+      <Project>{af3ef9f9-4099-4387-ae0f-4139fca2d1a5}</Project>
+      <Name>ContinentalBlob</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BlobHander3\BlobHandler.csproj">
       <Project>{3b1bbc61-200c-46c1-8f73-5428ac3231f0}</Project>
       <Name>BlobHandler</Name>

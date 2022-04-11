@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="DownloadDir" Type="System.String" Scope="User">
-      <Value Profile="(Default)">d:\\temp\blob\</Value>
+      <Value Profile="(Default)">C:\temp\blobdata\</Value>
     </Setting>
   </Settings>
 </SettingsFile>
