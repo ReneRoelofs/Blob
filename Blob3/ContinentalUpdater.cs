@@ -28,6 +28,7 @@ namespace Blob3
         List<Task> mySenderTasks = new List<Task>();
         public VehicleSenderList vehicleSenderList = new VehicleSenderList();
         public Boolean running = false;
+        CancellationToken ct;
 
         public ContinentalUpdater()
         {
@@ -174,6 +175,7 @@ namespace Blob3
                 running = true;
                 List<BlobItem> items = new List<BlobItem>();
                 containerClient = BlobHandler.Statics.GetContainerClient(testProd);
+                this.ct = ct;
 
                 while (!ct.IsCancellationRequested)
                 {
@@ -205,13 +207,14 @@ namespace Blob3
         /// <param name="testProd"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public void DoNowInALoop(TestProd testProd, string onlyVehicle, CancellationToken ct, DateTime? paramSince=null)
+        public void DoNowInALoop(TestProd testProd, string onlyVehicle, CancellationToken ct, DateTime? paramSince = null)
         {
             try
             {
                 containerClient = BlobHandler.Statics.GetContainerClient(testProd);
                 running = true;
                 List<BlobItem> items = new List<BlobItem>();
+                this.ct = ct;
 
                 while (!ct.IsCancellationRequested)
                 {
@@ -234,10 +237,12 @@ namespace Blob3
                 log.Error("", ex);
             }
             running = false;
+            log.DebugFormat("Done in a Loop");
         }
 
         private DateTime StartOneRun(DateTime? paramSince)
         {
+            log.DebugFormat("StartOneRun");
             getterStartTime = DateTime.Now;
             getterStopWatch.Restart();
 
@@ -265,32 +270,49 @@ namespace Blob3
 
         private void WaitForEmpty(CancellationToken ct)
         {
-            if (!ct.IsCancellationRequested)
+            try
             {
-                int partialDelay = (int)(Statics.MinutesForMainLoop * 60.0 / 10.0);
-                log.DebugFormat("Waiting for {0} minutes to go again in 10 steps of {1} seconds ", Statics.MinutesForMainLoop, partialDelay);
-                for (int i = 0; i < 10; i++)
+                if (!ct.IsCancellationRequested)
                 {
-                    MyWait(partialDelay);//
+                    int partialDelay = (int)(Statics.MinutesForMainLoop * 60.0 / 10.0);
+                    log.InfoFormat("Waiting for {0} minutes to go again in 10 steps of {1} seconds. nItmes in queue = {2} mem={3}",
+                        Statics.MinutesForMainLoop,
+                        partialDelay,
+                        ItemsInQueue(),
+                        RR.Lib.MemoryUsageStringShort());
+                    for (int i = 0; i < 10; i++)
+                    {
+                        MyWait(partialDelay);//
+                        if (ct.IsCancellationRequested)
+                        {
+                            break;
+                        }
+                        log.DebugFormat("Step. nItmes in queue = {0} mem={1}", ItemsInQueue(), RR.Lib.MemoryUsageStringShort());
+                    }
+                    if (!ct.IsCancellationRequested)
+                    {
+                        log.DebugFormat("Waited for {0} minutes to go again", Statics.MinutesForMainLoop);
+                    }
+                }
+                if (ct.IsCancellationRequested)
+                {
+                    log.Info("Cancelation requested");
+                }
+                while (!Empty())
+                {
+                    //log.DebugFormat("Waiting until empty. ");
+                    log.DebugFormat("Waiting until queue is empty. nItmes in queue = {0} mem = {1}", ItemsInQueue(), RR.Lib.MemoryUsageStringShort());
+                    MyWait(5);//
                     if (ct.IsCancellationRequested)
                     {
                         break;
                     }
                 }
-                log.DebugFormat("Waited for {0} minutes to go again", Statics.MinutesForMainLoop);
+                log.DebugFormat("Done Waiting.");
             }
-            if (ct.IsCancellationRequested)
+            catch (Exception ex)
             {
-                log.Info("Cancelation requested");
-            }
-            while (!Empty())
-            {
-                log.DebugFormat("Waiting until empty. ");
-                MyWait(1000);//
-                if (ct.IsCancellationRequested)
-                {
-                    break;
-                }
+                log.Error("", ex);
             }
         }
 
@@ -298,9 +320,9 @@ namespace Blob3
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            //Thread.Sleep(TimeSpan.FromMilliseconds(ms));
-            Task.Delay(TimeSpan.FromSeconds(sec));
-            while (sw.Elapsed.TotalSeconds < sec)
+            //Thread.Sleep(TimeSpan.FromSeconds(sec));
+            //Task.Delay(TimeSpan.FromSeconds(sec));
+            while (sw.Elapsed.TotalMilliseconds < sec * 1000)
             {
                 Application.DoEvents();
             }
@@ -351,8 +373,54 @@ namespace Blob3
 
         public Boolean Empty()
         {
-            return (nItemsInQueues == 0);
+            return ItemsInQueue() == 0;
         }
+
+        private DateTime counterEvaluated = DateTime.MinValue;
+        int counter = 0;
+
+        /// <summary>
+        /// Count the total number of blobs in the queues of the vehicles
+        /// </summary>
+        /// <returns></returns>
+        public int ItemsInQueue()
+        {
+            if (DateTime.Now.Subtract(counterEvaluated) > TimeSpan.FromSeconds(5))
+            {
+                counterEvaluated = DateTime.Now;
+                counter = 0;
+                foreach (VehicleWithSendQueue vc in vehicleSenderList)
+                {
+                    counter += vc.blobItemQueueCount;
+                }
+                //DebugQueueInfo();
+            }
+            return counter;
+        }
+
+
+        /// <summary>
+        /// indicate the status of the vehiclequeues. (first 20)
+        /// </summary>
+        /// <returns></returns>
+        public void DebugQueueInfo()
+        {
+            int i = 0;
+            int t = 0;
+            foreach (VehicleWithSendQueue vc in vehicleSenderList)
+            {
+                t += vc.blobItemQueueCount;
+                log.DebugFormat("VehSender {0} {1} items in queue  {2} sensors msg: T={3} F={4} S={5} D={6} GrandTot={7}",
+                    vc.vehicleNumber, vc.blobItemQueueCount, vc.sensorDataList.Count,
+                    vc.nTotal, vc.nFailed, vc.nSucces, vc.nDownload, t);
+                i++;
+                if (i > 100)
+                {
+                    break;
+                }
+            }
+        }
+
 
 
         /// <summary>
@@ -380,7 +448,7 @@ namespace Blob3
             //-
             lock (vehicleSenderList)
             {
-                VehicleWithSendQueue vehicleSender = vehicleSenderList.GetOrAdd(blobFilename.vehicleNumber, containerClient);
+                VehicleWithSendQueue vehicleSender = vehicleSenderList.GetOrAdd(blobFilename.vehicleNumber, containerClient, ct);
                 //-
                 //--- enqueue the blobitem to the vehicleSender
                 //-

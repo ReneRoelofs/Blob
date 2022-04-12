@@ -12,7 +12,7 @@
       <Value Profile="(Default)">60</Value>
     </Setting>
     <Setting Name="DetailedLoggingFilter" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">9602</Value>
+      <Value Profile="(Default)">9606,9602 </Value>
     </Setting>
   </Settings>
 </SettingsFile>

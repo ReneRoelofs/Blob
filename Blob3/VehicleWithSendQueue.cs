@@ -27,6 +27,7 @@ namespace Blob3
         //   private ConcurrentQueue<Payload> payloadQueue = new ConcurrentQueue<Payload>();
 
         private ConcurrentQueue<BlobItem> blobItemQueue = new ConcurrentQueue<BlobItem>(); // the main queue of incoming blobs, handled one by one. in DownloadBlobItem
+        public int nFailed, nDownload, nSucces, nTotal;
         public Boolean useTimestampNow;
         public BlobContainerClient containerClient;
         [XmlIgnore]
@@ -63,9 +64,9 @@ namespace Blob3
             return true;
         }
 
-        public VehicleWithSendQueue()
+        public VehicleWithSendQueue(CancellationToken ct)
         {
-            StartSenderTasks();
+            StartSenderTasks(ct);
         }
 
         public int blobItemQueueCount
@@ -94,29 +95,32 @@ namespace Blob3
             // Feedback(string.Format("{0,3} : Enqueue   {1} {2}", vehicleNumber, blobItemQueue.Count, blobItem.Name));
         }
 
-        public void StartSenderTasks()
+        public void StartSenderTasks(CancellationToken ct)
         {
-            Task.Factory.StartNew(() => DownloadBlobItem());
+            Task.Factory.StartNew(() => DownloadBlobItem(ct));
             //   Task.Factory.StartNew(() => SendPayloadToContinental());
         }
 
         /// <summary>
         /// download the blobitem en enqueue each payload to send to continental
         /// </summary>
-        private void DownloadBlobItem()
+        private void DownloadBlobItem(CancellationToken ct)
         {
             BlobItem blobItem;
             CCVehicle vehicle;
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 // Thread.Sleep(TimeSpan.FromMilliseconds(10));// heel even rustig aan.
 
                 if (blobItemQueue.TryDequeue(out blobItem))
                 {
+                    //log.DebugFormat("Vehicle {0} I'm Alive {1} items left in queue", vehicleNumber, blobItemQueueCount);
+                    nTotal++;
                     if (UpdateFailedRecently())
                     {
                         //log.DebugFormat("Vehicle {0,3} :  Update Failed retry at {2:HH:mm}",
                         //    vehicleNumber, updateFailed, updateFailed.AddMinutes(60));
+                        nFailed++;
                         continue;
                     }
 
@@ -125,6 +129,7 @@ namespace Blob3
                     //-
                     BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
                     BlobDownloadResult x = blobClient.DownloadContent();
+                    nDownload++;
                     string str = x.Content.ToString();
                     str = str.Replace("{\"ts\"", "\r\n{\"ts\"");
 
@@ -160,18 +165,32 @@ namespace Blob3
                             }
                             //   log.InfoFormat("Veh={0,4} Send timeout date from blob {1}", vehicleNumber, blobItem.Name);
                             SendAllSensorForTimeout();
+                            nSucces++;
                         }
                     }
                     catch (Exception ex)
                     {
                         log.WarnFormat("Oops for {0} {1}", blobItem.Name, ex.Message);
+                        nFailed++;
                     }
-
+                    //+
+                    //--- always relax a little bit
+                    //-
+                    Thread.Sleep(TimeSpan.FromMilliseconds(100));
                 }
                 else
                 {
-                    Task.Delay(TimeSpan.FromSeconds(1));
+                   // log.DebugFormat("Vehicle {0} I'm asleep {1} items in queue", vehicleNumber,blobItemQueueCount);
+                    Thread.Sleep(TimeSpan.FromSeconds(10));
                 }
+            }
+            if (ct.IsCancellationRequested)
+            {
+                log.DebugFormat("Vehicle {0} I'm Canceled {1} items left in queue", vehicleNumber, blobItemQueueCount);
+            }
+            else
+            {
+                log.DebugFormat("Vehicle {0} I'm terminated without cancel should NOT happen", vehicleNumber, blobItemQueueCount);
             }
         }
 
@@ -271,7 +290,7 @@ namespace Blob3
                 if (latestSendSensorData == null)
                 {
                     newSensorData.why = "NEW";
-                    if (!string.IsNullOrEmpty(newSensorData.sid))
+                    if (newSensorData.SidOk())
                     {
                         newSensorData.doSendData = true;
                     }
@@ -282,7 +301,7 @@ namespace Blob3
                     {
                         log.DebugFormat("NEW {1} {0}", newSensorData.Text(), newSensorData.why);
                         log.DebugFormat("OLD {1} {0}", latestSendSensorData.Text(), newSensorData.why);
-                        if (!string.IsNullOrEmpty(newSensorData.sid))
+                        if (newSensorData.SidOk())
                         {
                             newSensorData.doSendData = true;
                         }
@@ -328,7 +347,7 @@ namespace Blob3
         {
             foreach (SensorData sensorData in this.sensorDataList)
             {
-                if (!string.IsNullOrEmpty(sensorData.sid))
+                if (sensorData.SidOk())
                 {
                     if (sensorData.timestampUploaded.AddMinutes(Statics.MinutesForIgnoreSensorDataAfterDeserializing) < sensorData.timestamp)
                     {
@@ -378,10 +397,13 @@ namespace Blob3
                     response.StatusCode);
                 if (Statics.DetailedContiLogging)
                 {
-                    log.DebugFormat("                Json={0}",
-                        sJson.Replace("\r\n", ""));
-                    log.DebugFormat("                Text={0}",
-                        sensorData.Text());
+                    if (Statics.DetailedContiLoggingFilter == null || Statics.DetailedContiLoggingFilter.Contains(vehicleNumber))
+                    {
+                        log.DebugFormat("                Json={0}",
+                            sJson.Replace("\r\n", ""));
+                        log.DebugFormat("                Text={0}",
+                            sensorData.Text());
+                    }
                 }
             }
             else // Not Response.IsSuccesfull // more feedback and no sensorupdate
@@ -432,14 +454,14 @@ namespace Blob3
             }
         }
 
-        public VehicleWithSendQueue GetOrAdd(int vehicleNumber, BlobContainerClient containerClient)
+        public VehicleWithSendQueue GetOrAdd(int vehicleNumber, BlobContainerClient containerClient,CancellationToken ct)
         {
             lock (this)
             {
                 VehicleWithSendQueue result = this.Find(V => V.vehicleNumber == vehicleNumber.ToString());
                 if (result == null)
                 {
-                    result = new VehicleWithSendQueue
+                    result = new VehicleWithSendQueue(ct)
                     {
                         vehicleNumber = vehicleNumber.ToString(),
                         containerClient = containerClient,

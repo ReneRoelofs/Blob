@@ -52,7 +52,7 @@ namespace BlobContinentalUpdater.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("9602")]
+        [global::System.Configuration.DefaultSettingValueAttribute("9606,9602 ")]
         public string DetailedLoggingFilter {
             get {
                 return ((string)(this["DetailedLoggingFilter"]));

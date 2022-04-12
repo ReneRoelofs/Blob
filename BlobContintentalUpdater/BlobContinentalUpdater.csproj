@@ -94,6 +94,10 @@
       <Project>{3b1bbc61-200c-46c1-8f73-5428ac3231f0}</Project>
       <Name>BlobHandler</Name>
     </ProjectReference>
+    <ProjectReference Include="..\FmsBlobToContinental\FmsBlobToContinental.csproj">
+      <Project>{70276dbe-6967-4d4c-8cc7-1882c76d78a3}</Project>
+      <Name>FmsBlobToContinental</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

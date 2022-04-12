@@ -48,6 +48,8 @@ resultTask = httpClient->PostAsync(state->httpRequest, httpContent);
          */
 
         static public Boolean DetailedContiLogging = false;
+        static public string DetailedContiLoggingFilter = "";
+
         static public Boolean ContiLoggingOnUpdates = true;
 
 

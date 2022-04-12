@@ -139,6 +139,14 @@ namespace FmsBlobToContinental
         /// </summary>
         public string sid { get; set; }
 
+        public Boolean SidOk()
+        {
+            if (String.IsNullOrEmpty(sid)) return false;
+            if (sid.Trim() == "0") return false;
+            if (sid.Trim() == "1") return false;
+            return true;
+        }
+
         [JsonIgnore]
         public string sidHex { get; set; }
 

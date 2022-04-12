@@ -321,7 +321,7 @@ public class Payload
         //-
         foreach (SensorData sensorData in this.sensorsDataList)
         {
-            if (!String.IsNullOrEmpty(sensorData.sid) && sensorData.sid != "0" && sensorData.sid != "1")
+            if (sensorData.SidOk())
             {
                 sensorsInThisPayload.Add(sensorData);
 

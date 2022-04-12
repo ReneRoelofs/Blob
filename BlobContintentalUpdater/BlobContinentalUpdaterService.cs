@@ -25,86 +25,100 @@ namespace BlobContinentalUpdater
       </dependentAssembly>
     */
 
-/*
- * Kill a service manually: 
- *  1.       Click the Start menu
-    2.       Click Run or in the search bar type services.msc
-    3.       Press Enter
-    4.       Look for the service and check the Properties and identify its service name
-    5.       Once found, open a command prompt. Type sc queryex [servicename].
-              For EDS Server       type: sc queryex “EDS Server”
-    6.       Press Enter
-    7.       Identify the PID
-              In my example the PID was 5476, see above screenshot
-    8.       In the same command prompt type taskkill /pid [pid number] /f
-    ***/
-public partial class BlobContinentalUpdaterService : ServiceBase
-{
-    private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-    CancellationTokenSource cts = new CancellationTokenSource();
-    ContinentalUpdater continentalUpdater = new ContinentalUpdater();
-    
-    public BlobContinentalUpdaterService()
+    /*
+     * Kill a service manually: 
+     *  1.       Click the Start menu
+        2.       Click Run or in the search bar type services.msc
+        3.       Press Enter
+        4.       Look for the service and check the Properties and identify its service name
+        5.       Once found, open a command prompt. Type sc queryex [servicename].
+                  For EDS Server       type: sc queryex “EDS Server”
+        6.       Press Enter
+        7.       Identify the PID
+                  In my example the PID was 5476, see above screenshot
+        8.       In the same command prompt type taskkill /pid [pid number] /f
+        ***/
+    public partial class BlobContinentalUpdaterService : ServiceBase
     {
-        InitializeComponent();
-    }
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        CancellationTokenSource cts = new CancellationTokenSource();
+        ContinentalUpdater continentalUpdater = new ContinentalUpdater();
 
-    protected override void OnStart(string[] args)
-    {
-        try
-        {  // test voor git
-            log.Info("**************** START  *************     Versie   " + RR.RR_Assembly.AssemblyVersionPlusBuildDateTimeEXE);
-
-            //+
-            //--- prepare the test prod and create the distributer
-            //-
-            TestProd testProd = Properties.Settings.Default.TestProd.ToLower() == "prod" ? TestProd.Prod : TestProd.Test;
-            BlobHandler.Statics.detailedDistributeLogging = Properties.Settings.Default.DetailedLogging;
-            BlobHandler.Statics.detailedDistributeLoggingFilter = Properties.Settings.Default.DetailedLoggingFilter;
-            BlobHandler.Statics.DelayWhenNothingFound = Properties.Settings.Default.DelayWhenNothingFound;
-            log.InfoFormat("Detailed logging = {0}", BlobHandler.Statics.detailedDistributeLogging);
-            log.InfoFormat("Detailed logging if BlobName contains = {0}", BlobHandler.Statics.detailedDistributeLoggingFilter);
-            log.InfoFormat("Delay when no (more) blobs found = {0} sec (Not used!)", BlobHandler.Statics.DelayWhenNothingFound);
-
-
-            //+
-            //--- run the continental updater in a loop
-            //-
-            continentalUpdater = new ContinentalUpdater();
-            Task.Run(() =>
-            {
-                log.InfoFormat("Starting DoNowInALoop");
-                continentalUpdater.DoNowInALoop(testProd,  onlyVehicle: "",cts.Token);
-            }
-            );
-
-            log.InfoFormat("Started DoNowInALoop");
-        }
-        catch (Exception ex)
+        public BlobContinentalUpdaterService()
         {
-            log.Error("", ex);
+            InitializeComponent();
         }
 
-    }
-
-    protected override void OnStop()
-    {
-        if (continentalUpdater != null && continentalUpdater.running)
+        protected override void OnStart(string[] args)
         {
-            //+
-            //-- cancel old process.
-            //-
-            cts.Cancel();
-            //+
-            //-- Wait for distributer to end and react to the cancelation.
-            //-
-            while (continentalUpdater.running)
-            {
-                log.Info("Wait for updater to cancel");
-                Thread.Sleep(TimeSpan.FromSeconds(3));
+            try
+            {  // test voor git
+                log.Info("**************** START  *************     Versie   " + RR.RR_Assembly.AssemblyVersionPlusBuildDateTimeEXE);
+
+                //+
+                //--- prepare the test prod and create the distributer
+                //-
+                TestProd testProd = Properties.Settings.Default.TestProd.ToLower() == "prod" ? TestProd.Prod : TestProd.Test;
+                
+                //BlobHandler.Statics.detailedDistributeLogging = Properties.Settings.Default.DetailedLogging;
+                //BlobHandler.Statics.detailedDistributeLoggingFilter = Properties.Settings.Default.DetailedLoggingFilter;
+
+                FmsBlobToContinental.Statics.DetailedContiLogging = Properties.Settings.Default.DetailedLogging;
+                FmsBlobToContinental.Statics.DetailedContiLoggingFilter = Properties.Settings.Default.DetailedLoggingFilter;
+                
+                BlobHandler.Statics.DelayWhenNothingFound = Properties.Settings.Default.DelayWhenNothingFound;
+                log.InfoFormat("Detailed logging = {0}", FmsBlobToContinental.Statics.DetailedContiLogging);
+                log.InfoFormat("Detailed logging for vehicles = {0}", FmsBlobToContinental.Statics.DetailedContiLoggingFilter);
+                log.InfoFormat("Delay when no (more) blobs found = {0} sec (Not used!)", BlobHandler.Statics.DelayWhenNothingFound);
+
+
+                //+
+                //--- run the continental updater in a loop
+                //-
+                continentalUpdater = new ContinentalUpdater();
+                Task.Run(() =>
+                {
+                    log.InfoFormat("Starting DoNowInALoop");
+                    continentalUpdater.DoNowInALoop(testProd, onlyVehicle: "", cts.Token);
+                    if (cts.Token.IsCancellationRequested)
+                    {
+                        log.Info("DoNowInALoop Finished after cancelation");
+                    }
+                    else
+                    {
+                        log.Error("DoNowInALoop Finished (should not happen)");
+                    }
+                }
+                );
+
+                log.InfoFormat("Started DoNowInALoop");
             }
+            catch (Exception ex)
+            {
+                log.Error("", ex);
+            }
+
         }
-        log.Info("**************** STOPPED   *************     Versie   " + RR.RR_Assembly.AssemblyVersionPlusBuildDateTimeEXE);
+
+        protected override void OnStop()
+        {
+            log.Info("STOPPING.....");
+            if (continentalUpdater != null && continentalUpdater.running)
+            {
+                //+
+                //-- cancel old process.
+                //-
+                cts.Cancel();
+                //+
+                //-- Wait for distributer to end and react to the cancelation.
+                //-
+                while (continentalUpdater.running)
+                {
+                    log.Info("Wait for updater to cancel");
+                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                }
+            }
+            log.Info("**************** STOPPED   *************     Versie   " + RR.RR_Assembly.AssemblyVersionPlusBuildDateTimeEXE);
+        }
     }
-}
 }
