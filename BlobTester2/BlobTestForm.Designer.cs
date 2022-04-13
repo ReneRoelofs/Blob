@@ -748,6 +748,7 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem1.AccessibleName = "Position";
             this.bindingNavigatorPositionItem1.AutoSize = false;
+            this.bindingNavigatorPositionItem1.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem1.Name = "bindingNavigatorPositionItem1";
             this.bindingNavigatorPositionItem1.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem1.Text = "0";
@@ -884,6 +885,7 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem.AccessibleName = "Position";
             this.bindingNavigatorPositionItem.AutoSize = false;
+            this.bindingNavigatorPositionItem.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem.Name = "bindingNavigatorPositionItem";
             this.bindingNavigatorPositionItem.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem.Text = "0";
@@ -923,7 +925,7 @@ namespace BlobTester
             this.gcTirePressure.Location = new System.Drawing.Point(0, 0);
             this.gcTirePressure.MainView = this.gvTirePressure;
             this.gcTirePressure.Name = "gcTirePressure";
-            this.gcTirePressure.Size = new System.Drawing.Size(1039, 178);
+            this.gcTirePressure.Size = new System.Drawing.Size(1039, 110);
             this.gcTirePressure.TabIndex = 6;
             this.gcTirePressure.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
             this.gvTirePressure,
@@ -937,7 +939,7 @@ namespace BlobTester
             this.gvTirePressure.GridControl = this.gcTirePressure;
             this.gvTirePressure.Name = "gvTirePressure";
             this.gvTirePressure.OptionsView.ShowViewCaption = true;
-            this.gvTirePressure.ViewCaption = "Payload Details";
+            this.gvTirePressure.ViewCaption = "Payload Details (FEF4 , FC42)";
             // 
             // gridView5
             // 
@@ -951,7 +953,7 @@ namespace BlobTester
             this.gcValues.Location = new System.Drawing.Point(0, 0);
             this.gcValues.MainView = this.gvValues;
             this.gcValues.Name = "gcValues";
-            this.gcValues.Size = new System.Drawing.Size(1039, 25);
+            this.gcValues.Size = new System.Drawing.Size(1039, 93);
             this.gcValues.TabIndex = 8;
             this.gcValues.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
             this.gvValues,
@@ -965,7 +967,7 @@ namespace BlobTester
             this.gvValues.GridControl = this.gcValues;
             this.gvValues.Name = "gvValues";
             this.gvValues.OptionsView.ShowViewCaption = true;
-            this.gvValues.ViewCaption = "Tire Pressure ";
+            this.gvValues.ViewCaption = "TTM FF02 ";
             // 
             // gridView6
             // 
@@ -1044,7 +1046,7 @@ namespace BlobTester
             // 
             this.splitContainer4.Panel2.Controls.Add(this.gcValues);
             this.splitContainer4.Size = new System.Drawing.Size(1039, 207);
-            this.splitContainer4.SplitterDistance = 178;
+            this.splitContainer4.SplitterDistance = 110;
             this.splitContainer4.TabIndex = 0;
             // 
             // statusStrip1
@@ -1196,6 +1198,7 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem2.AccessibleName = "Position";
             this.bindingNavigatorPositionItem2.AutoSize = false;
+            this.bindingNavigatorPositionItem2.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem2.Name = "bindingNavigatorPositionItem2";
             this.bindingNavigatorPositionItem2.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem2.Text = "0";

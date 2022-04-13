@@ -300,7 +300,7 @@ namespace Blob3
                 }
                 while (!Empty())
                 {
-                    //log.DebugFormat("Waiting until empty. ");
+                    log.DebugFormat("Waiting until empty. ");
                     log.DebugFormat("Waiting until queue is empty. nItmes in queue = {0} mem = {1}", ItemsInQueue(), RR.Lib.MemoryUsageStringShort());
                     MyWait(5);//
                     if (ct.IsCancellationRequested)
@@ -308,7 +308,7 @@ namespace Blob3
                         break;
                     }
                 }
-                log.DebugFormat("Done Waiting.");
+                //log.DebugFormat("Done Waiting.");
             }
             catch (Exception ex)
             {

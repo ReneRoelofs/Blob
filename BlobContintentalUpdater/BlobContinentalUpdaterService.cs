@@ -5,7 +5,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading;
@@ -38,8 +41,13 @@ namespace BlobContinentalUpdater
                   In my example the PID was 5476, see above screenshot
         8.       In the same command prompt type taskkill /pid [pid number] /f
         ***/
+
+
+
     public partial class BlobContinentalUpdaterService : ServiceBase
     {
+
+
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         CancellationTokenSource cts = new CancellationTokenSource();
         ContinentalUpdater continentalUpdater = new ContinentalUpdater();
@@ -54,18 +62,17 @@ namespace BlobContinentalUpdater
             try
             {  // test voor git
                 log.Info("**************** START  *************     Versie   " + RR.RR_Assembly.AssemblyVersionPlusBuildDateTimeEXE);
-
                 //+
                 //--- prepare the test prod and create the distributer
                 //-
                 TestProd testProd = Properties.Settings.Default.TestProd.ToLower() == "prod" ? TestProd.Prod : TestProd.Test;
-                
+
                 //BlobHandler.Statics.detailedDistributeLogging = Properties.Settings.Default.DetailedLogging;
                 //BlobHandler.Statics.detailedDistributeLoggingFilter = Properties.Settings.Default.DetailedLoggingFilter;
 
                 FmsBlobToContinental.Statics.DetailedContiLogging = Properties.Settings.Default.DetailedLogging;
                 FmsBlobToContinental.Statics.DetailedContiLoggingFilter = Properties.Settings.Default.DetailedLoggingFilter;
-                
+
                 BlobHandler.Statics.DelayWhenNothingFound = Properties.Settings.Default.DelayWhenNothingFound;
                 log.InfoFormat("Detailed logging = {0}", FmsBlobToContinental.Statics.DetailedContiLogging);
                 log.InfoFormat("Detailed logging for vehicles = {0}", FmsBlobToContinental.Statics.DetailedContiLoggingFilter);
@@ -91,7 +98,7 @@ namespace BlobContinentalUpdater
                 }
                 );
 
-                log.InfoFormat("Started DoNowInALoop");
+                //log.InfoFormat("Started DoNowInALoop");
             }
             catch (Exception ex)
             {

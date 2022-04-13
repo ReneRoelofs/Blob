@@ -48,7 +48,7 @@ namespace Blob3
                 _updateFailed = value;
                 if (value != DateTime.MinValue)
                 {
-                    log.DebugFormat("Vehicle {0,3} :  Update Failed at ={1:HH:mm} retry from {2:HH:mm}",
+                    log.InfoFormat("Vehicle {0,3} :  Update Failed at ={1:HH:mm} retry from {2:HH:mm}",
                                     vehicleNumber, updateFailed, updateFailed.AddMinutes(60));
                 }
             }
@@ -170,7 +170,7 @@ namespace Blob3
                     }
                     catch (Exception ex)
                     {
-                        log.WarnFormat("Oops for {0} {1}", blobItem.Name, ex.Message);
+                        log.Warn("Blobfilename "+ blobItem.Name, ex);
                         nFailed++;
                     }
                     //+

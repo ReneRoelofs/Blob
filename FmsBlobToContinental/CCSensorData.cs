@@ -188,7 +188,7 @@ namespace FmsBlobToContinental
         public uint CtiTireStatus { get { return (uint)tst; } set { tst = value; } }
         [JsonIgnore]
 
-        public uint ctiTireElectricalFault { get; set; }  // no abbriviations yet??
+        public uint ctiTireElectricalFault { get { return (uint)flt; } set { flt = (long)value; } }  
         [JsonIgnore]
         public uint extendedTirePressureSupport { get; set; }  // no abbriviations yet??
         [JsonIgnore]
@@ -264,7 +264,7 @@ namespace FmsBlobToContinental
                 return false;
             }
 
-            if (this.flt != Prev.flt) { why = string.Format("flt {0} to {1}",Prev.flt, this.flt); return true; } // electrical fault value changed;
+            if (this.flt != Prev.flt) { why = string.Format("flt {0} to {1}", Prev.flt, this.flt); return true; } // electrical fault value changed;
             if (this.lkrt != Prev.lkrt) { why = string.Format("lkrt {0} to {1}", Prev.lkrt, this.lkrt); return true; } // leakage rate value changed;
             if (this.ptd != Prev.ptd) { why = string.Format("ptd {0} to {1}", Prev.ptd, this.ptd); return true; } // pressure threashold detection changed
             if (this.ses != Prev.ses) { why = string.Format("ses {0} to {1}", Prev.ses, this.ses); return true; } //  sensor enanbled status changed;
