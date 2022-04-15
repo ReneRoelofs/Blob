@@ -15,6 +15,9 @@ namespace FmsBlobToContinental
 {
     public static class Statics
     {
+
+        public const int UNKNOWN = 254;
+
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 
@@ -139,18 +142,26 @@ resultTask = httpClient->PostAsync(state->httpRequest, httpContent);
         {
             lock (MyLock)
             {
-                if (oldOne != null && sensorDict.ContainsKey(oldOne.sid))
+
+                if (oldOne != null && oldOne.sid != null)
                 {
-                    sensorDict.Remove(oldOne.sid);
+                    if (oldOne != null && sensorDict.ContainsKey(oldOne.sid))
+                    {
+                        sensorDict.Remove(oldOne.sid);
+                    }
                 }
-                if (sensorDict.ContainsKey(newOne.sid))
+                if (newOne.sid != null)
                 {
-                    sensorDict.Remove(newOne.sid);
+                    if (sensorDict.ContainsKey(newOne.sid))
+                    {
+                        sensorDict.Remove(newOne.sid);
+                    }
+                    sensorDict.Add(newOne.sid, newOne);
                 }
-                sensorDict.Add(newOne.sid, newOne);
             }
-            // dit kost te veel performance : SaveSensorList();
         }
+        // dit kost te veel performance : SaveSensorList();
+
 
         public static void SaveSensorList()
         {
@@ -265,9 +276,9 @@ resultTask = httpClient->PostAsync(state->httpRequest, httpContent);
             //              start 16 t/m 23 -> 3e byte dus mybyte = 00111001
             //              start 24 t/m 32 -> 4e byte dus mybyte = 11000110
             // start b.v 34 -> startindex 4 and rest 2
-            
+
             int rest = start - (byteIndex * 8);
-            
+
             result = myByte.Substring(8 - rest - len, len);
             // b.v. start 34 len 2 -> 11000110 substring 4, 2-> 01;
             // result are the rightmost bits in the byte
@@ -307,7 +318,7 @@ resultTask = httpClient->PostAsync(state->httpRequest, httpContent);
                 int debug2 = 0;
                 debug2++;
             }
-#endif      
+#endif
             string mybits = binarystring.Substring(start, len);
             mybits = GetmybitsAt(binarystring, start, len);
 

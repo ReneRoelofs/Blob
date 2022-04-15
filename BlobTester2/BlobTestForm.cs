@@ -129,7 +129,9 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             else
             {
                 cts = new CancellationTokenSource();
-                await continentalUpdater.DoNowInALoopAsych(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, tbBusFilter.Text, cts.Token);
+                DateTime? targetDate = GetFormTargetDate();
+
+                await continentalUpdater.DoNowInALoopAsych(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, tbBusFilter.Text, cts.Token, paramSince: targetDate);
                 //ALS SERVICE: continentalUpdater.DoNowInALoop(rbTestBlob.Checked ? TestProd.Test : TestProd.Prod, tbBusFilter.Text, cts.Token);
             }
         }
@@ -244,6 +246,11 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
                 Payload payload = (Payload)bsPayload.Current;
                 if (payload != null)
                 {
+
+                    payload.OnDeserializedMethod(new System.Runtime.Serialization.StreamingContext()); // DEBUG
+
+
+
                     payload.EnrichSensorWithTTM();
                     bindingSource2.DataSource = payload.sensorsDataList;
                     gcTirePressure.RefreshDataSource();
@@ -316,7 +323,7 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             tbFeedback2.Clear();
         }
 
-      
+
 
 
         private void rbTestConti_CheckedChanged(object sender, EventArgs e)
@@ -480,7 +487,7 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             gcFiles.DataSource = bsBlobItems;
             bsPayload.DataSource = payloadList;
             SetPayloadFieldNames();
-            
+
 
             itemsOnForm.Clear();
 
@@ -538,7 +545,11 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
                 CloudFmsRootObject rootobject = RR_Serialize.JSON.FromString<CloudFmsRootObject>(str);
                 CCVehicle vehicle = FmsBlobToContinental.Statics.vehicleList.GetOrAdd(rootobject.vehicle.vehicleNo, rootobject.agentSerial);
 
+#if !ALL
+                foreach (Payload payload in rootobject.payload.ToList().FindAll(P => P.HasSensorData && P.HasPressureInfo()))
+#else
                 foreach (Payload payload in rootobject.payload)
+#endif
                 {
                     payload.vehicle = vehicle;
                     this.payloadList.Add(payload);
@@ -930,7 +941,7 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             BlobHandler.Statics.detailedDistributeLogging = cbDetailedDistributeLogging.Checked;
         }
 
-       
+
 
         private void FEF4_Click(object sender, EventArgs e)
         {

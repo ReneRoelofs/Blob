@@ -141,40 +141,164 @@ public class Payload
     /// </summary>
     /// <param name="context"></param>
     [OnDeserialized()]
-    internal void OnDeserializedMethod(StreamingContext context)
+    public void OnDeserializedMethod(StreamingContext context)
     {
         if (raw != null)
         {
-            if (raw.FC42 != null)
+            //NEE We moeten worden geupdate dus niet alles weggooien: sensorsDataList.Clear();
+            OnDeserializedMethodNEW(context);
+
+            if (false)  // OUD DOEN WE NIET MEER.
             {
-                foreach (string s in raw.FC42)
+                if (raw.FF04 != null)
                 {
-                    raw.ReadTireCondition2(this, s, (DateTime)ts);
+                    foreach (string s in raw.FF04)
+                    {
+                        raw.ReadTTMPositionAndTTMId(this, s, (DateTime)ts);
+                    }
+                }
+                if (raw.FF02 != null)
+                {
+                    foreach (string s in raw.FF02)
+                    {
+                        raw.ReadTTMData(this, s, (DateTime)ts);
+                    }
+                }
+                if (raw.FC42 != null)
+                {
+                    foreach (string s in raw.FC42)
+                    {
+                        raw.ReadTireCondition2(this, s, (DateTime)ts);
+                    }
+                }
+             
+                if (raw.FEF4 != null)
+                {
+                    foreach (string s in raw.FEF4) //PGN FEF4 == 65268 “Tire Condition” of SAE J1939
+                    {
+                        raw.ReadTireCondition(this, s, (DateTime)ts);
+                    }
                 }
             }
-            if (raw.FEF4 != null)
+        }
+    }
+
+    internal void OnDeserializedMethodNEW(StreamingContext context)
+    {
+        if (raw != null)
+        {
+            if (raw.FF04 != null)
             {
-                foreach (string s in raw.FEF4) //PGN FEF4 == 65268 “Tire Condition” of SAE J1939
+                //+
+                //--- 1:  create the sensors based on the GraphicalPosition PGN (parameter group number) FF04
+                //-
+                foreach (string s in raw.FF04)
                 {
-                    raw.ReadTireCondition(this, s, (DateTime)ts);
+                    uint location = Statics.GetBitsAt(s, 16, 8);
+
+                   // location += 1000; // DEBUG
+
+                    SensorData sd = GetOrAddSensorDataByLocation(location, "FF04 new", s);
+                    sd.ProcessGraphicalPosition(s);   // thus set the location, and tireId and TTMid which is equals Sid.
+                    sd.setTimestamp((DateTime)this.ts);
                 }
             }
             if (raw.FF02 != null)
             {
+                //+
+                //--- 2: process the TTM data 
                 foreach (string s in raw.FF02)
                 {
-                    raw.ReadTTMData(this, s, (DateTime)ts);
+                    uint tireId = Statics.GetBitsAt(s, 2, 5);
+
+                    //tireId += 1000; // DEBUG
+
+                    SensorData sd = GetSensorTireId(tireId, "FF02 new", s);
+                    if (sd != null)
+                    {
+                        sd.ProcessTTMData(s);
+                    }
                 }
             }
-            if (raw.FF04 != null)
+
+            if (raw.FEF4 != null)
             {
-                foreach (string s in raw.FF04)
+                foreach (string s in raw.FEF4) //PGN FEF4 == 65268 “Tire Condition” of SAE J1939
                 {
-                    raw.ReadTTMPosition(this, s, (DateTime)ts);
+                    uint location = Statics.GetBitsAt(s, 0, 8);
+                    
+                   // location += 1000; // DEBUG
+                    
+                    SensorData sd = GetSensorDataByLocation(location, "FEF4 new",s);
+                    if (sd != null)
+                    {
+                        sd.SetConditionFromFEF4(s);
+                    }
+                }
+            }
+
+            if (raw.FC42 != null)
+            {
+                foreach (string s in raw.FC42)
+                {
+                    uint location = Statics.GetBitsAt(s, 0, 8);
+                    
+                    //location += 1000; // DEBUG
+
+                    SensorData sd = GetSensorDataByLocation(location, "FC42 new", s);
+                    if (sd != null)
+                    {
+                        sd.SetConditionFromFC42(s);
+                    }
                 }
             }
         }
+    }
+
+    private SensorData GetOrAddSensorDataByLocation(uint location, string srcType, string src)
+    {
+        SensorData sd = sensorsDataList.Find(D => D.location == location);
+        if (sd == null)
+        {
+            sd = new SensorData();
+            sd.location = location;
+            sensorsDataList.Add(sd);
+            sd.src = srcType + " : " + src;
         }
+        return sd;
+    }
+    private SensorData GetSensorDataByLocation(uint location, string srcType, string src)
+    {
+        SensorData sd = sensorsDataList.Find(D => D.location == location);
+        //// DEBUG
+        //if (sd == null)
+        //{
+        //    sd = new SensorData();
+        //    sd.location = location;
+        //    sd.tireId = 999;
+        //    sensorsDataList.Add(sd);
+        //    sd.src = srcType + " : " + src;
+        //}
+        //// end debug
+        return sd;
+    }
+    private SensorData GetSensorTireId(uint tireId, string srcType, string src)
+    {
+        SensorData sd = sensorsDataList.Find(D => D.tireId == tireId);
+        //// DEBUG
+        //if (sd == null)
+        //{
+        //    sd = new SensorData();
+        //    sd.location = 9999;
+        //    sensorsDataList.Add(sd);
+        //    sd.src = srcType + " : " + src;
+        //}
+        //// end debug
+        return sd;
+    }
+
+
+
 
 
     //public string sSensorData
@@ -210,7 +334,7 @@ public class Payload
     }
 
 
- 
+
     private Boolean SentGPSData(Boolean useTimeStampNow)
     {
         Boolean succesfull = true;
@@ -285,13 +409,13 @@ public class Payload
                     vehicleNr,
                     vehicle.clientMd().BaseUrl,
                     response.StatusCode, why);
-                    foreach (TTMData ttmData in this.ttmDataList)
-                    {
-                        log.DebugFormat("Veh={0,4} pos={1,2} Sid={2} SidHex={2:X}",
-                            vehicleNr, ttmData.tireLocation, ttmData.TTMID);
-                    }
-                    log.DebugFormat("Json={0}",
-                    sJson.Replace("\r\n", ""));
+                foreach (TTMData ttmData in this.ttmDataList)
+                {
+                    log.DebugFormat("Veh={0,4} pos={1,2} Sid={2} SidHex={2:X}",
+                        vehicleNr, ttmData.tireLocation, ttmData.TTMID);
+                }
+                log.DebugFormat("Json={0}",
+                sJson.Replace("\r\n", ""));
 
             }
             succesfull = response.IsSuccessful && succesfull;
@@ -444,7 +568,7 @@ public class Payload
             //                                41
 
             uint location = Statics.GetBitsAt(value, 0, 8); //00
-            SensorData sd = GetOrAddSensorData(payload, location);
+            SensorData sd = GetOrAddSensorData(payload, location, "FEF4 old", value);
             sd.setTimestamp(baseDateTime);
             sd.SetConditionFromFEF4(value);
             //  Console.WriteLine(string.Format("'{0}'  {1}", value, sd.Text()));
@@ -459,7 +583,7 @@ public class Payload
         public void ReadTireCondition2(Payload payload, string value, DateTime baseDateTime)
         {
             uint location = Statics.GetBitsAt(value, 0, 8);
-            SensorData sd = GetOrAddSensorData(payload, location);
+            SensorData sd = GetOrAddSensorData(payload, location, "FC42 old", value);
             sd.setTimestamp(baseDateTime);
             sd.SetConditionFromFC42(value);
             //   Console.WriteLine(string.Format("'{0}'  {1}", value, sd.Text()));
@@ -484,18 +608,24 @@ public class Payload
         /// </summary>
         /// <param name="value"></param>
         /// <param name="baseDateTime"></param>
-        public void ReadTTMPosition(Payload payload, string value, DateTime baseDateTime)
+        public void ReadTTMPositionAndTTMId(Payload payload, string value, DateTime baseDateTime)
         {
             uint systemId = Statics.GetBitsAt(value, 0, 2);
             uint tireId = Statics.GetBitsAt(value, 2, 5);
 
             TTMData sd = GetOrAddTTMData(payload, systemId, tireId);
 
-            sd.SetTTMPosition(value);
+            sd.SetGraphicalPositionAndTTMId(value);
         }
 
 
-        private SensorData GetOrAddSensorData(Payload payload, uint location)
+        /// <summary>
+        /// TODO: deze routine moet gewoon naar Payload, daar zit hij al dus deze mag weg.
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        internal SensorData GetOrAddSensorData(Payload payload, uint location, string srctype, string src)
         {
             SensorData sd = payload.sensorsDataList.Find(D => D.location == location);
             if (sd == null)
@@ -503,6 +633,7 @@ public class Payload
                 sd = new SensorData();
                 sd.location = location;
                 payload.sensorsDataList.Add(sd);
+                sd.src = srctype + " : " + src;
             }
             return sd;
         }

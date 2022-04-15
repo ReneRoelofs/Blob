@@ -36,8 +36,6 @@ namespace FmsBlobToContinental
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-
-
         [JsonIgnore]
         public Boolean doSendData = false; // should the sensordata be send to continental asap
         [JsonIgnore]
@@ -75,6 +73,12 @@ namespace FmsBlobToContinental
         /// </summary>
         public Int64 ptd = 0; // attrib pressureTresholdDetection
 
+        [JsonIgnore]
+        private uint TTMWarning = Statics.UNKNOWN;
+
+        [JsonIgnore]
+        private long TTMStatus = Statics.UNKNOWN;
+
         /// <summary>
         /// Signal Strength Indicator 1
         /// </summary>
@@ -109,7 +113,7 @@ namespace FmsBlobToContinental
         /// Sensor enable status
         /// </summary>
         /// 
-        private Int64 _ses;
+        private Int64 _ses= Statics.UNKNOWN;  // 254 betekend dat we het niet weten, dus dat hij ook niet als change gezien wordt
         public Int64 ses
         { // attrib sensorEnabledStatus
             get
@@ -139,6 +143,9 @@ namespace FmsBlobToContinental
         /// </summary>
         public string sid { get; set; }
 
+        [JsonIgnore]
+        public uint tireId { get; set; }
+
         public Boolean SidOk()
         {
             if (String.IsNullOrEmpty(sid)) return false;
@@ -146,6 +153,7 @@ namespace FmsBlobToContinental
             if (sid.Trim() == "1") return false;
             return true;
         }
+
 
         [JsonIgnore]
         public string sidHex { get; set; }
@@ -176,8 +184,26 @@ namespace FmsBlobToContinental
         public float ttmpr;
 
 
+        private uint _location;
+
         [JsonIgnore]
-        public uint location { get; set; }
+        public uint location
+        {
+            get
+            {
+                return _location;
+            }
+            set
+            {
+                if (_location != 0 && _location != value)
+                {
+                    int debug = 1;
+                }
+                _location = value;
+            }
+        }
+        [JsonIgnore]
+        public string src { get; set; }
         [JsonIgnore]
         public uint pressure { get { return (uint)tprs; } set { tprs = value; } }
         [JsonIgnore]
@@ -188,12 +214,26 @@ namespace FmsBlobToContinental
         public uint CtiTireStatus { get { return (uint)tst; } set { tst = value; } }
         [JsonIgnore]
 
-        public uint ctiTireElectricalFault { get { return (uint)flt; } set { flt = (long)value; } }  
+        public uint ctiTireElectricalFault { get { return (uint)flt; } set { flt = (long)value; } }
         [JsonIgnore]
         public uint extendedTirePressureSupport { get; set; }  // no abbriviations yet??
         [JsonIgnore]
         public uint airLeakageRate { get { return (uint)lkrt; } set { lkrt = value; } }
-        public uint pressureTresholdDetection { get { return (uint)ptd; } set { ptd = value; } }
+        [JsonIgnore]
+        public uint pressureTresholdDetection
+        {
+            get { return (uint)ptd; }
+            set
+            {
+                ptd = value;
+#if DEBUG
+                if (ptd == 9)
+                {
+                    int debug = 0;
+                }
+#endif
+            }
+        }
 
         /// <summary>
         /// TrireCondition2.TirePressureExtendedRange
@@ -209,6 +249,7 @@ namespace FmsBlobToContinental
 
         [JsonIgnore]
         public string rawFEF4 { get; set; }
+
         [JsonIgnore]
         public string rawFC42 { get; set; }
 
@@ -264,10 +305,19 @@ namespace FmsBlobToContinental
                 return false;
             }
 
+            if (this.ses == Statics.UNKNOWN)
+            {
+                why = "ses missing";
+                return false; // record is incomplete so dont send anyway.
+            }
+
             if (this.flt != Prev.flt) { why = string.Format("flt {0} to {1}", Prev.flt, this.flt); return true; } // electrical fault value changed;
             if (this.lkrt != Prev.lkrt) { why = string.Format("lkrt {0} to {1}", Prev.lkrt, this.lkrt); return true; } // leakage rate value changed;
             if (this.ptd != Prev.ptd) { why = string.Format("ptd {0} to {1}", Prev.ptd, this.ptd); return true; } // pressure threashold detection changed
-            if (this.ses != Prev.ses) { why = string.Format("ses {0} to {1}", Prev.ses, this.ses); return true; } //  sensor enanbled status changed;
+          
+            /// SES is geen significant change want die zwappert te veel
+            /// 
+            /// if (this.ses != Prev.ses) { why = string.Format("ses {0} to {1}", Prev.ses, this.ses); return true; } //  sensor enanbled status changed;
             if (this.tst != Prev.tst) { why = string.Format("tst {0} to {1}", Prev.tst, this.tst); return true; } //  tire status changed;
 
             if (changePercentage(this.pressure, Prev.pressure) > 10) { why = string.Format("pres {0} to {1}", Prev.pressure, this.pressure); return true; } // more then 10 percent in pressure changed
@@ -292,10 +342,16 @@ namespace FmsBlobToContinental
             //+
             //--- kopieer alles van de voorgaande en zet de conditions opnieuw.
             //-
-            this.flt = Prev.flt;
-            this.lkrt = Prev.lkrt;
-            this.ptd = Prev.ptd;
-            this.ses = Prev.ses;
+            //this.flt = Prev.flt;
+            //this.lkrt = Prev.lkrt;
+            //this.ptd = Prev.ptd;
+
+            /*
+
+            if (!this.FromFEF4)
+            {
+                this.ses = Prev.ses;
+            }
             this.tst = Prev.tst;
             this.pressure2 = Prev.pressure2;
             this.requiredPressure2 = Prev.requiredPressure2;
@@ -306,7 +362,7 @@ namespace FmsBlobToContinental
 
             this.sid = Prev.sid;
             this.sidHex = Prev.sidHex;
-
+            */
         }
 
 
@@ -316,6 +372,40 @@ namespace FmsBlobToContinental
             double result = Math.Abs(((1.0 * A) / (1.0 * B)) * 100) - 100;
             return result;
         }
+        public void ProcessTTMData(string value)
+        {
+            pressure = (4706 * Statics.GetBitsAt(value, 8, 8)); // -4706; // 4706 kPa/bit -4706 kPa offset maar offset doen we toch maar niet.
+            pressure2 = (uint)(pressure / 1000);
+            temperature = (uint)((1 * Statics.GetBitsAt(value, 16, 8)) - 50); // 1gr C/bit -50K offset
+
+            TTMStatus = Statics.GetBitsAt(value, 32, 8); // TTM State ignored.
+             
+            TTMWarning = Statics.GetBitsAt(value, 40, 8); // TTM Alarm+warning
+            ptd = 0;
+
+            switch (TTMWarning)
+            {
+                case 0x00: ptd = 0b010; break; // No warning
+                case 0x01: ptd = 0b011; break; // under-inflation warning 
+                case 0x02: ptd = 0b100; break; // under-inflation alarm
+                case 0x04: ptd = 0b110; break; // mute->sensorerror
+                case 0x09: ptd = 0b010; break; // pressure difference warning -> no warning
+            }
+            flt = Statics.GetBitsAt(value, 49, 1); // TTM Battery Flag
+            uint TTMDefective = Statics.GetBitsAt(value, 50, 1);
+
+            //+
+            //--- alleen als hij WEL kapot is zetten we de ses op 2.
+            //
+            if (TTMDefective == 1)
+            {
+                ses = 2;
+            }
+            //ses = 1; // TTM Defective  loopt niet lekker synchroon.  opposite of ses therefor ZERO MINUS:
+            uint TTMLoosedetection = Statics.GetBitsAt(value, 51, 2);
+        }
+
+
 
         /// <summary> 
         /// PGN FEF4 == 65268 “Tire Condition” of SAE J1939  in CPC-3rd-Party-Connection_v0160.pdf
@@ -379,20 +469,37 @@ namespace FmsBlobToContinental
 
             sensorEnabledStatus = Statics.GetBitsAt(value, 32, 2, true, debug, "sensor Enabled Status"); //10
 #if DEBUG
+            long tmpx = TTMStatus;
+
             if (sensorEnabledStatus == 2 && debug == false)
             {
-                //      SetConditionFromFEF4(value, true);// extra debug
+                 //      SetConditionFromFEF4(value, true);// extra debug
                 //_ = Statics.GetBitsAt(value, 32, 2, true, true, "sensor Enabled Status"); // extra debug
             }
 #endif
-            CtiTireStatus = Statics.GetBitsAt(value, 34, 2, true, debug, "CtiTireStatus");
+            uint TmpCtiTireStatus = Statics.GetBitsAt(value, 34, 2, true, debug, "CtiTireStatus");
+            if (TmpCtiTireStatus != CtiTireStatus && TTMStatus != Statics.UNKNOWN)
+            {
+                CtiTireStatus = TmpCtiTireStatus;
+            }
+
+
+
+
+
             ctiTireElectricalFault = Statics.GetBitsAt(value, 36, 2, true, debug, "ctiTireElectricalFault");
             extendedTirePressureSupport = Statics.GetBitsAt(value, 38, 2, true, debug, "extendedTirePressureSupport");
             airLeakageRate = (uint)(0.1) * Statics.GetBitsAt(value, 40, 16, true, debug, "airLeakageRate");  //0.1 pa/s
 
             Statics.GetBitsAt(value, 56, 5, true, debug, "reserved");
 
-            pressureTresholdDetection = Statics.GetBitsAt(value, 61, 3, true, debug, "pressureTresholdDetection");
+            uint tmpPtd = Statics.GetBitsAt(value, 61, 3, true, debug, "pressureTresholdDetection");
+            if (tmpPtd != ptd && TTMWarning != Statics.UNKNOWN)
+            {
+                // een sensor error kan nooit de eerder gelezen waarde uit de TTI overschijven.
+                ptd = tmpPtd;
+            }
+            uint x = TTMWarning;//DEBUG
             rawFEF4 = value;
         }
 
@@ -455,6 +562,25 @@ namespace FmsBlobToContinental
             }
         }
 
+        /// <summary>
+        /// Process the GraphicalPosition or FF04 PGN
+        /// setting the TireID, Location and Sid. the graphicalposition is ignored so far.
+        /// </summary>
+        /// <param name="value"></param>
+        public void ProcessGraphicalPosition(string value)
+        {
+            tireId = Statics.GetBitsAt(value, 2, 5);
+
+            // tireId += 1000;  // DEBUG
+
+            location = Statics.GetBitsAt(value, 16, 8); //+1000 //DEBUG
+
+            
+            uint iSid = Statics.GetBitsAt(value, 32, 32);
+            sid = iSid.ToString();
+            sidHex = iSid.ToString("X");
+        }
+
 
     }
 
@@ -503,14 +629,11 @@ namespace FmsBlobToContinental
         }
 
 
-        public void SetTTMPosition(string value)
+        public void SetGraphicalPositionAndTTMId(string value)
         {
             GraphicalPosition = Statics.GetBitsAt(value, 8, 8);
             tireLocation = Statics.GetBitsAt(value, 16, 8);
             TTMID = Statics.GetBitsAt(value, 32, 32);
-
-
-
             rawFF04 = value;
 
         }

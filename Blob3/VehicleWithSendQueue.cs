@@ -23,17 +23,12 @@ namespace Blob3
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        //   [XmlIgnore]
-        //   private ConcurrentQueue<Payload> payloadQueue = new ConcurrentQueue<Payload>();
-
         private ConcurrentQueue<BlobItem> blobItemQueue = new ConcurrentQueue<BlobItem>(); // the main queue of incoming blobs, handled one by one. in DownloadBlobItem
         public int nFailed, nDownload, nSucces, nTotal;
         public Boolean useTimestampNow;
         public BlobContainerClient containerClient;
-        [XmlIgnore]
-        public List<SensorData> sensorDataList = new List<SensorData>();
-
-
+        public List<SensorData> sensorDataListSend = new List<SensorData>();
+        public List<SensorData> sensorDataListAll = new List<SensorData>();
 
         private DateTime _updateFailed = DateTime.MinValue;
 
@@ -107,7 +102,6 @@ namespace Blob3
         private void DownloadBlobItem(CancellationToken ct)
         {
             BlobItem blobItem;
-            CCVehicle vehicle;
             while (!ct.IsCancellationRequested)
             {
                 // Thread.Sleep(TimeSpan.FromMilliseconds(10));// heel even rustig aan.
@@ -123,56 +117,11 @@ namespace Blob3
                         nFailed++;
                         continue;
                     }
-
                     //+
                     //--- inv: update not failed or failed longer then 60 min ago
                     //-
-                    BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
-                    BlobDownloadResult x = blobClient.DownloadContent();
-                    nDownload++;
-                    string str = x.Content.ToString();
-                    str = str.Replace("{\"ts\"", "\r\n{\"ts\"");
 
-                    if (Statics.VehiclesShowingDownloadTrace.Contains(iVehicleNumber))
-                    {
-                        log.DebugFormat("Vehicle {0,3} :  BlobQueueLen={1,2} PayloadQuelen={2,3}",
-                            vehicleNumber,
-                            blobItemQueue.Count);
-                    }
-                    try
-                    {
-                        CloudFmsRootObject rootobject = RR_Serialize.JSON.FromString<CloudFmsRootObject>(str);
-                        //TODO : VehicleNo moet uit AQAD komen en niet uit het rootobject.
-                        vehicle = Statics.vehicleList.GetOrAdd(rootobject.vehicle.vehicleNo, rootobject.agentSerial);
-                        {
-                            Boolean ok = true;
-                            List<Payload> payloadList = rootobject.payload.ToList().FindAll(P => P.HasSensorData && P.HasPressureInfo());
-                            //+
-                            //--- put every payload in this blob into the payloadStack.
-                            //--- to be sure the last one is realy in position 0 lock the stack first 
-                            //--- so it cannot be read in the SendPayloadToContinental where the first one is handled 
-                            //-
-                            //  log.InfoFormat("Veh={0,4} Send significant changed from blob {1}", vehicleNumber, blobItem.Name);
-                            foreach (Payload payload in payloadList)
-                            {
-                                payload.vehicle = vehicle;
-                                UpdateSensorDataListViaPayload(payload);
-
-                                if (UpdateFailedRecently())
-                                {
-                                    break;
-                                }
-                            }
-                            //   log.InfoFormat("Veh={0,4} Send timeout date from blob {1}", vehicleNumber, blobItem.Name);
-                            SendAllSensorForTimeout();
-                            nSucces++;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        log.Warn("Blobfilename "+ blobItem.Name, ex);
-                        nFailed++;
-                    }
+                    HandleBlobItem(blobItem);
                     //+
                     //--- always relax a little bit
                     //-
@@ -180,7 +129,7 @@ namespace Blob3
                 }
                 else
                 {
-                   // log.DebugFormat("Vehicle {0} I'm asleep {1} items in queue", vehicleNumber,blobItemQueueCount);
+                    // log.DebugFormat("Vehicle {0} I'm asleep {1} items in queue", vehicleNumber,blobItemQueueCount);
                     Thread.Sleep(TimeSpan.FromSeconds(10));
                 }
             }
@@ -195,30 +144,95 @@ namespace Blob3
         }
 
         /// <summary>
-        /// Have a look if all sensordata's are very young
+        /// Existing good working routine:
         /// </summary>
-        /// <returns></returns>
-        private Boolean allSensorsUpToDate()
+        /// <param name="blobItem"></param>
+        private void HandleBlobItem(BlobItem blobItem)
         {
-            if (sensorDataList.Count < 6 && vehicleNumber != "1111")
+            BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
+            BlobDownloadResult x = blobClient.DownloadContent();
+            nDownload++;
+            string str = x.Content.ToString();
+            str = str.Replace("{\"ts\"", "\r\n{\"ts\"");
+
+            if (Statics.VehiclesShowingDownloadTrace.Contains(iVehicleNumber))
             {
-                return false;
+                log.DebugFormat("Vehicle {0,3} :  BlobQueueLen={1,2} PayloadQuelen={2,3}",
+                    vehicleNumber,
+                    blobItemQueue.Count);
             }
-            if (sensorDataList.Count < 4 && vehicleNumber == "1111")
+            try
             {
-                return false;
-            }
-            Boolean result = true;
-            foreach (SensorData sensorData in this.sensorDataList)
-            {
-                if (!sensorData.UpToDate())
+                CloudFmsRootObject rootobject = RR_Serialize.JSON.FromString<CloudFmsRootObject>(str);
+                //TODO : VehicleNo moet uit AQAD komen en niet uit het rootobject.
+                CCVehicle vehicle = Statics.vehicleList.GetOrAdd(rootobject.vehicle.vehicleNo, rootobject.agentSerial);
                 {
-                    result = false;
-                    break;
+                    Boolean ok = true;
+                    List<Payload> payloadList = rootobject.payload.ToList().FindAll(P => P.HasSensorData && P.HasPressureInfo());
+                    //+
+                    //--- Get every payload (having sensordata) update now if change or alarm detected.
+                    //--- update via timeout afterwards.
+                    //-
+                    //  log.InfoFormat("Veh={0,4} Send significant changed from blob {1}", vehicleNumber, blobItem.Name);
+                    foreach (Payload payload in payloadList)
+                    {
+                        payload.vehicle = vehicle;
+                        UpdateSensorDataListViaPayload(payload);
+
+                        if (UpdateFailedRecently())
+                        {
+                            break;
+                        }
+                    }
+                    //   log.InfoFormat("Veh={0,4} Send timeout date from blob {1}", vehicleNumber, blobItem.Name);
+                    if (!UpdateFailedRecently())
+                    {
+                        SendAllSensorForTimeout();
+                    }
+                    nSucces++;
                 }
             }
-            return result;
+            catch (Exception ex)
+            {
+                log.Warn("Blobfilename " + blobItem.Name, ex);
+                nFailed++;
+            }
         }
+
+        //private void HandlePayloadNew(Payload payload)
+        //{
+        //    foreach (SensorData sd in payload.sensorsDataList)
+        //    {
+        //        log.Info(sd.Json());
+        //    }
+
+        //}
+
+        ///// <summary>
+        ///// Have a look if all sensordata's are very young
+        ///// </summary>
+        ///// <returns></returns>
+        //private Boolean allSensorsUpToDate()
+        //{
+        //    if (sensorDataListSend.Count < 6 && vehicleNumber != "1111")
+        //    {
+        //        return false;
+        //    }
+        //    if (sensorDataListSend.Count < 4 && vehicleNumber == "1111")
+        //    {
+        //        return false;
+        //    }
+        //    Boolean result = true;
+        //    foreach (SensorData sensorData in this.sensorDataListSend)
+        //    {
+        //        if (!sensorData.UpToDate())
+        //        {
+        //            result = false;
+        //            break;
+        //        }
+        //    }
+        //    return result;
+        //}
 
 
         /// <summary>
@@ -244,31 +258,34 @@ namespace Blob3
             //---      now get the sensordata
             //-
 
-
-
             //  List<SensorData> sensorsInThisPayload;
             //  Boolean XGetListResult = payLoad.GetSensorsList(useTimestampNow, out sensorsInThisPayload);
 
-            payLoad.EnrichSensorWithTTM();// even alle TTM data over de andere data heenschrijven.
+
+            //NEW : niet meer nodig
+            //NEW :  payLoad.EnrichSensorWithTTM();// even alle TTM data over de andere data heenschrijven.
 
             //+
             //--- send any new or alarm (significatnChange) data directly to Continental, but wait for the TIMEOUT records.
             //---
             //-
-            foreach (SensorData newSensorData in payLoad.sensorsDataList)  // sensorsInThisPayload)
+            foreach (SensorData sensorData in payLoad.sensorsDataList)  // sensorsInThisPayload)
             {
-                SensorData latestSendSensorData = this.sensorDataList.Find(S => S.location == newSensorData.location);
+                SensorData latestSendSensorData = this.sensorDataListSend.Find(S => S.location == sensorData.location);
 #if DEBUG
-                if (newSensorData.ses == 2)
+                if (sensorData.ses == 2)
                 {
                     int debug = 0;
                     debug++;
                 }
 #endif
-
-                newSensorData.CopyDataFromPrev(latestSendSensorData);
-                newSensorData.EnrichWithTTM();// even alle TTM nogmaals data over de andere data heenschrijven.
-
+                //NEW NIET MEER want we hebben nu TTI spul :
+                
+                //+
+                //--- copy some fields from the previous sensordata because not all PGN's contain the same data.
+                //-
+                sensorData.CopyDataFromPrev(latestSendSensorData);
+                //NEW NIET MEER : newSensorData.EnrichWithTTM();// even alle TTM nogmaals data over de andere data heenschrijven.
 #if DEBUG
                 if (latestSendSensorData != null && latestSendSensorData.ses == 2)
                 {
@@ -277,64 +294,67 @@ namespace Blob3
                 }
 #endif
 #if DEBUG
-                if (newSensorData.ses == 2)
+                if (sensorData.ses == 2)
                 {
                     int debug = 0;
                     debug++;
                 }
 #endif
-                if (useTimestampNow)
+                if (useTimestampNow && sensorData.ses != Statics.UNKNOWN)
                 {
-                    newSensorData.why = "TIMENOW";
+                    sensorData.why = "TIMENOW";
                 }
-                if (latestSendSensorData == null)
+                if (latestSendSensorData == null && sensorData.ses != Statics.UNKNOWN)
                 {
-                    newSensorData.why = "NEW";
-                    if (newSensorData.SidOk())
+                    sensorData.why = "NEW";
+                    if (sensorData.SidOk())
                     {
-                        newSensorData.doSendData = true;
+                        sensorData.doSendData = true;
                     }
                 }
                 if (latestSendSensorData != null)
                 {
-                    if (newSensorData.SignificantChange(latestSendSensorData, out newSensorData.why))
+                    if (sensorData.SignificantChange(latestSendSensorData, out sensorData.why))
                     {
-                        log.DebugFormat("NEW {1} {0}", newSensorData.Text(), newSensorData.why);
-                        log.DebugFormat("OLD {1} {0}", latestSendSensorData.Text(), newSensorData.why);
-                        if (newSensorData.SidOk())
+                        log.DebugFormat("NEW {1} {0}", sensorData.Text(), sensorData.why);
+                        log.DebugFormat("OLD {1} {0}", latestSendSensorData.Text(), sensorData.why);
+                        if (sensorData.SidOk())
                         {
-                            newSensorData.doSendData = true;
+                            sensorData.doSendData = true;
                         }
                     }
                 }
                 //+
                 //--- als er iets belangrijks gebeurd is, dan sturen we de data direct.
                 //-
-                if (newSensorData.doSendData)
+                if (sensorData.doSendData)
                 {
-                    SendSensorDataToContinental(newSensorData, useTimestampNow);
+                    SendSensorDataToContinental(sensorData, useTimestampNow);
 #if DEBUG
-                    if (newSensorData.ses == 2)
+                    if (sensorData.ses == 2)
                     {
                         int debug = 0;
                         debug++;
                     }
 #endif
-                    Statics.ReplaceSensorInList(latestSendSensorData, newSensorData);
+                    Statics.ReplaceSensorInList(latestSendSensorData, sensorData);
                     if (UpdateFailedRecently())
                     {
                         break;
                     }
+                }
 
-                }
                 //+
-                //--- replace sensorDataList with this one.
+                //--- replace sensorDataList with this one
                 //-
-                if (latestSendSensorData != null)
+                SensorData existingSensorinAll= this.sensorDataListAll.Find(S => S.location == sensorData.location);
+                if (existingSensorinAll != null)
                 {
-                    this.sensorDataList.Remove(latestSendSensorData);
+                    this.sensorDataListSend.Remove(existingSensorinAll);
                 }
-                this.sensorDataList.Add(newSensorData);
+             
+                this.sensorDataListAll.Add(sensorData);
+
             }
             return true;
         }
@@ -345,17 +365,21 @@ namespace Blob3
         /// </summary>
         private void SendAllSensorForTimeout()
         {
-            foreach (SensorData sensorData in this.sensorDataList)
+            foreach (SensorData sensorData in this.sensorDataListAll)
             {
-                if (sensorData.SidOk())
+                if (sensorData.SidOk() && sensorData.ses != Statics.UNKNOWN)
                 {
-                    if (sensorData.timestampUploaded.AddMinutes(Statics.MinutesForIgnoreSensorDataAfterDeserializing) < sensorData.timestamp)
+                    SensorData latestSendSensorData = this.sensorDataListSend.Find(S => S.location == sensorData.location);
+                    if (latestSendSensorData != null)
                     {
-                        sensorData.why = "TIME";
-                        SendSensorDataToContinental(sensorData, useTimestampNow);
-                        if (UpdateFailedRecently())
+                        if (latestSendSensorData.timestamp.AddMinutes(Statics.MinutesForIgnoreSensorDataAfterDeserializing) < sensorData.timestamp)
                         {
-                            break;
+                            sensorData.why = String.Format("TIME {0:HH:mm} was {1:HH:mm} ",sensorData.timestamp, latestSendSensorData.timestamp);
+                            SendSensorDataToContinental(sensorData, useTimestampNow);
+                            if (UpdateFailedRecently())
+                            {
+                                break;
+                            }
                         }
                     }
                 }
@@ -383,6 +407,22 @@ namespace Blob3
             //--- ook als het mislukt is updaten we toch de timestamp van deze sensor anders blijven we aan de gang
             //-
             sensorData.timestampUploaded = sensorData.timestamp;
+
+            //+
+            //--- replace sensorDataList with this one
+            //-
+            SensorData latestSendSensorData = this.sensorDataListSend.Find(S => S.location == sensorData.location);
+            if (latestSendSensorData != null)
+            {
+                this.sensorDataListSend.Remove(latestSendSensorData);
+            }
+            if (sensorData.ses == Statics.UNKNOWN)
+            {
+                int magniet = 09;
+            }
+            this.sensorDataListSend.Add(sensorData);
+
+
 
             if (response.IsSuccessful)
             {
@@ -454,7 +494,7 @@ namespace Blob3
             }
         }
 
-        public VehicleWithSendQueue GetOrAdd(int vehicleNumber, BlobContainerClient containerClient,CancellationToken ct)
+        public VehicleWithSendQueue GetOrAdd(int vehicleNumber, BlobContainerClient containerClient, CancellationToken ct)
         {
             lock (this)
             {

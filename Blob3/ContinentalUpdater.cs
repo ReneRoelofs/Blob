@@ -168,7 +168,7 @@ namespace Blob3
         /// <param name="testProd"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task DoNowInALoopAsych(TestProd testProd, string onlyVehicle, CancellationToken ct, DateTime? paramSince = null)
+        public async Task DoNowInALoopAsych(TestProd testProd, string onlyVehicle, CancellationToken ct, DateTime? paramSince)
         {
             try
             {
@@ -411,7 +411,7 @@ namespace Blob3
             {
                 t += vc.blobItemQueueCount;
                 log.DebugFormat("VehSender {0} {1} items in queue  {2} sensors msg: T={3} F={4} S={5} D={6} GrandTot={7}",
-                    vc.vehicleNumber, vc.blobItemQueueCount, vc.sensorDataList.Count,
+                    vc.vehicleNumber, vc.blobItemQueueCount, vc.sensorDataListAll.Count,
                     vc.nTotal, vc.nFailed, vc.nSucces, vc.nDownload, t);
                 i++;
                 if (i > 100)
