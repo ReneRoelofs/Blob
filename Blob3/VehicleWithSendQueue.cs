@@ -1,4 +1,5 @@
-﻿using Azure.Storage.Blobs;
+﻿#define TTMDATAX
+using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using BlobHandler;
 using FmsBlobToContinental;
@@ -214,7 +215,7 @@ namespace Blob3
         /// </summary>
         private Boolean UpdateSensorDataListViaPayload(Payload payLoad)
         {
-            Boolean SendResult = payLoad.SendMasterDataToContinental(useTimestampNow); //TODO RENE: raar moment en rare plek voor die code.
+            Boolean SendResult = SendMasterDataToContinental(useTimestampNow); //TODO RENE: raar moment en rare plek voor die code.
             if (!SendResult)
             {
                 //+
@@ -399,5 +400,90 @@ namespace Blob3
             }
             return response.IsSuccessful;
         }
+
+
+        /// <summary>
+        /// Send the masterdata to continental is something chnanged, and update the vehice.masterdataok boolean.
+        /// </summary>
+        /// <param name="useTimeStampNow"></param>
+        /// <returns></returns>
+        public Boolean SendMasterDataToContinental(Boolean useTimeStampNow)
+        {
+            Boolean succesfull = true;
+            string sJson;
+            /// <summary>
+            /// Send the metadata and gps to continental
+            /// </summary>
+            /// <param name="useTimeStampNow"></param>
+            /// <returns></returns>
+
+            //+
+            //--- get sensor master data
+            //-
+
+            Boolean metadataChanged = false;
+            string why = "";
+
+#if !TTMDATA
+            foreach (SensorData sensorData in this.sensorDataListAll)  // was eerder  //.FindAll(S => S.ttmData != null))
+            {
+                SensorMasterData smd = GetOrAddSensorMasterData(sensorData.sid.ToString(), sensorData.graphicalPosition.ToString("X"),
+                    out Boolean tmpMetaDataChanged, out string tmpWhy);
+
+                metadataChanged = metadataChanged || tmpMetaDataChanged;
+                why += " " + tmpWhy;
+
+            }
+#endif
+
+#if TTMDATA
+            foreach (TTMData ttmData in this.ttmDataList)
+        {
+            SensorMasterData smd = vehicle.GetOrAddSensorMasterData(ttmData.TTMID.ToString(), ttmData.GraphicalPosition.ToString("X"),
+                out Boolean tmpMetaDataChanged, out string tmpWhy);
+            metadataChanged = metadataChanged || tmpMetaDataChanged;
+            why += " " + tmpWhy;
+        }
+#endif
+
+            if (metadataChanged)
+            {
+                //+
+                //---  send sensor master data, only if changes in sensores were made
+                //-
+                IRestResponse response = SendMD(out sJson);
+                //1111
+
+                if (Statics.DetailedContiLogging)
+                {
+                    log.DebugFormat("Veh={0,4} MasterDataUpdate  Url={1} Status={2} {3}",
+                        vehicleNumber,
+                        clientMd().BaseUrl,
+                        response.StatusCode, why);
+
+#if TTMDATA  //defined in 1st line of this document
+
+                foreach (TTMData ttmData in this.ttmDataList)
+                {
+                    log.DebugFormat("Veh={0,4} pos={1,2} Sid={2} SidHex={2:X}",
+                        vehicleNr, ttmData.tireLocation, ttmData.TTMID);
+                }
+#else
+                    foreach (SensorData sensorData in this.sensorDataListAll)
+                    {
+                        log.DebugFormat("Veh={0,4} pos={1,2} Sid={2} SidHex={2:X}",
+                            vehicleNumber, sensorData.location, sensorData.sid);
+                    }
+#endif
+                    log.DebugFormat("Json={0}",
+                    sJson.Replace("\r\n", ""));
+
+                }
+                succesfull = response.IsSuccessful && succesfull;
+            }
+            masterdataOk = succesfull;
+            return succesfull;
+        }
+
     }
 }
