@@ -111,7 +111,7 @@ namespace FmsBlobToContinental
         /// <param name="graphicalPosition"></param>
         /// <param name="somethingChanged">true if not already known, false otherwise</param>
         /// <returns></returns>
-        public SensorMasterData GetOrAddSensorMasterData(uint ttmId, string graphicalPosition, out Boolean somethingChanged, out string why)
+        public SensorMasterData GetOrAddSensorMasterData(string sid, string graphicalPosition, out Boolean somethingChanged, out string why)
         {
             if (graphicalPosition.Length <= 1)
             {
@@ -119,10 +119,10 @@ namespace FmsBlobToContinental
             }
             somethingChanged = false;
             why = "NoChange";
-            SensorMasterData result = sensorsMasterDataList.Find(S => S.ttmId == ttmId.ToString());
+            SensorMasterData result = sensorsMasterDataList.Find(S => S.ttmId == sid);
             if (result == null)
             {
-                result = new SensorMasterData { position = graphicalPosition, ttmId = ttmId.ToString() };
+                result = new SensorMasterData { position = graphicalPosition, ttmId = sid };
                 //+
                 //--- let op alleen goede sensoren met een juist ttm id toe te voegen,
                 //-

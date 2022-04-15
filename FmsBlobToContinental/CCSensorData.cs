@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿#define TTMDATAX
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -113,7 +114,7 @@ namespace FmsBlobToContinental
         /// Sensor enable status
         /// </summary>
         /// 
-        private Int64 _ses= Statics.UNKNOWN;  // 254 betekend dat we het niet weten, dus dat hij ook niet als change gezien wordt
+        private Int64 _ses = Statics.UNKNOWN;  // 254 betekend dat we het niet weten, dus dat hij ook niet als change gezien wordt
         public Int64 ses
         { // attrib sensorEnabledStatus
             get
@@ -143,6 +144,12 @@ namespace FmsBlobToContinental
         /// </summary>
         public string sid { get; set; }
 
+        [JsonIgnore]
+        uint TTMID { get; set; }
+
+
+        [JsonIgnore]
+        public uint systemId { get; set; }
         [JsonIgnore]
         public uint tireId { get; set; }
 
@@ -202,6 +209,9 @@ namespace FmsBlobToContinental
                 _location = value;
             }
         }
+
+        [JsonIgnore]
+        public uint graphicalPosition { get; set; }
         [JsonIgnore]
         public string src { get; set; }
         [JsonIgnore]
@@ -253,8 +263,10 @@ namespace FmsBlobToContinental
         [JsonIgnore]
         public string rawFC42 { get; set; }
 
+#if TTMDATA
         [JsonIgnore]
-        TTMData ttmData = null;
+        public TTMData ttmData = null;
+#endif
         public string Text()
         {
             return string.Format(
@@ -314,7 +326,7 @@ namespace FmsBlobToContinental
             if (this.flt != Prev.flt) { why = string.Format("flt {0} to {1}", Prev.flt, this.flt); return true; } // electrical fault value changed;
             if (this.lkrt != Prev.lkrt) { why = string.Format("lkrt {0} to {1}", Prev.lkrt, this.lkrt); return true; } // leakage rate value changed;
             if (this.ptd != Prev.ptd) { why = string.Format("ptd {0} to {1}", Prev.ptd, this.ptd); return true; } // pressure threashold detection changed
-          
+
             /// SES is geen significant change want die zwappert te veel
             /// 
             /// if (this.ses != Prev.ses) { why = string.Format("ses {0} to {1}", Prev.ses, this.ses); return true; } //  sensor enanbled status changed;
@@ -372,6 +384,54 @@ namespace FmsBlobToContinental
             double result = Math.Abs(((1.0 * A) / (1.0 * B)) * 100) - 100;
             return result;
         }
+
+        /// <summary>
+        /// Process the GraphicalPosition or FF04 PGN
+        /// setting the TireID, Location and Sid. the graphicalposition is ignored so far.
+        /// this is STEP-1  in reading the payload
+        /// </summary>
+        /// </summary>
+        /// <param name="value"></param>
+        public void ProcessGraphicalPosition(string value)
+        {
+            systemId = Statics.GetBitsAt(value, 0, 2);
+            tireId = Statics.GetBitsAt(value, 2, 5);
+            graphicalPosition = Statics.GetBitsAt(value, 8, 8);
+
+            // tireId += 1000;  // DEBUG
+
+            location = Statics.GetBitsAt(value, 16, 8); //+1000 //DEBUG
+
+            TTMID = Statics.GetBitsAt(value, 32, 32);
+
+            uint iSid = Statics.GetBitsAt(value, 32, 32);
+            sid = iSid.ToString();
+            sidHex = iSid.ToString("X");
+
+#if TTMDATA
+            if (ttmData == null)
+            {
+                ttmData = new TTMData();
+                if (systemId == 2)
+                {
+                    systemId = 0; //unsupported->truck
+                }
+                ttmData.systemId = systemId;
+
+                ttmData.tireId = tireId;
+                ttmData.TTMID = TTMID;
+                ttmData.GraphicalPosition = graphicalPosition;
+                ttmData.tireLocation = Statics.GetBitsAt(value, 16, 8);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Process the TTM data 
+        /// PGN =  FF02 
+        /// this is STEP-2 in reading the payload
+        /// </summary>
+        /// <param name="value"></param>
         public void ProcessTTMData(string value)
         {
             pressure = (4706 * Statics.GetBitsAt(value, 8, 8)); // -4706; // 4706 kPa/bit -4706 kPa offset maar offset doen we toch maar niet.
@@ -379,7 +439,7 @@ namespace FmsBlobToContinental
             temperature = (uint)((1 * Statics.GetBitsAt(value, 16, 8)) - 50); // 1gr C/bit -50K offset
 
             TTMStatus = Statics.GetBitsAt(value, 32, 8); // TTM State ignored.
-             
+
             TTMWarning = Statics.GetBitsAt(value, 40, 8); // TTM Alarm+warning
             ptd = 0;
 
@@ -403,6 +463,34 @@ namespace FmsBlobToContinental
             }
             //ses = 1; // TTM Defective  loopt niet lekker synchroon.  opposite of ses therefor ZERO MINUS:
             uint TTMLoosedetection = Statics.GetBitsAt(value, 51, 2);
+
+
+
+            // systemID and tireId already set as primary key.
+            //  systemId = Statics.GetBitsAt(value, 0, 2);
+            //  tireId = Statics.GetBitsAt(value, 2, 5);
+
+            // the below items are in TTM but are they used:
+            // used above: TTMPressure = (4706 * Statics.GetBitsAt(value, 8, 8)); // -4706; // 4706 kPa/bit -4706 kPa offset maar offset doen we toch maar niet.
+            // used above: TTMPressure = (uint)(TTMPressure / 1000);
+            // used above: TTMTemperature = (uint)((1 * Statics.GetBitsAt(value, 16, 8)) - 50); // 1gr C/bit -50K offset
+            // used above but ignored TTMState = Statics.GetBitsAt(value, 32, 8);
+            // used above: as TTMWarning leading to Ptd values   TTMAlarmWarning = Statics.GetBitsAt(value, 40, 8);
+
+            //TODO: RENE moeten we nog iets met die batteryflag?
+
+            uint BatteryFlag = Statics.GetBitsAt(value, 49, 1);
+
+            // used above, leading to ses    TTMDefective = Statics.GetBitsAt(value, 50, 1);
+            // not used,   TTMLoosedetection = Statics.GetBitsAt(value, 51, 2);
+
+#if TTMDATA
+            if (ttmData != null)
+            {
+                ttmData.SetTTMValue(value);
+            }
+#endif
+
         }
 
 
@@ -473,7 +561,7 @@ namespace FmsBlobToContinental
 
             if (sensorEnabledStatus == 2 && debug == false)
             {
-                 //      SetConditionFromFEF4(value, true);// extra debug
+                //      SetConditionFromFEF4(value, true);// extra debug
                 //_ = Statics.GetBitsAt(value, 32, 2, true, true, "sensor Enabled Status"); // extra debug
             }
 #endif
@@ -531,7 +619,7 @@ namespace FmsBlobToContinental
             rawFC42 = value;
         }
 
-
+#if TTMDATA
         public void EnrichWithTTM(List<TTMData> ttmDataList)
         {
             ttmData = ttmDataList.Find(T => T.tireLocation == this.location);
@@ -561,25 +649,7 @@ namespace FmsBlobToContinental
                 }
             }
         }
-
-        /// <summary>
-        /// Process the GraphicalPosition or FF04 PGN
-        /// setting the TireID, Location and Sid. the graphicalposition is ignored so far.
-        /// </summary>
-        /// <param name="value"></param>
-        public void ProcessGraphicalPosition(string value)
-        {
-            tireId = Statics.GetBitsAt(value, 2, 5);
-
-            // tireId += 1000;  // DEBUG
-
-            location = Statics.GetBitsAt(value, 16, 8); //+1000 //DEBUG
-
-            
-            uint iSid = Statics.GetBitsAt(value, 32, 32);
-            sid = iSid.ToString();
-            sidHex = iSid.ToString("X");
-        }
+#endif
 
 
     }

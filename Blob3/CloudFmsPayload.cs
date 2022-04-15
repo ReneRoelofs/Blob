@@ -1,4 +1,5 @@
-﻿using BlobHandler;
+﻿#define TTMDATAX
+using BlobHandler;
 using FmsBlobToContinental;
 using Newtonsoft.Json;
 using RestSharp;
@@ -133,7 +134,10 @@ public class Payload
 
     // sensordatalist voor payload is er niet meer want we gebruiken altijd 
     public List<SensorData> sensorsDataList = new List<SensorData>();
-    public List<TTMData> ttmDataList = new List<TTMData>();
+
+#if TTMDATA  //defined in 1st line of this document
+    private List<TTMData> ttmDataList = new List<TTMData>();
+#endif
 
 
     /// <summary>
@@ -141,49 +145,8 @@ public class Payload
     /// </summary>
     /// <param name="context"></param>
     [OnDeserialized()]
+
     public void OnDeserializedMethod(StreamingContext context)
-    {
-        if (raw != null)
-        {
-            //NEE We moeten worden geupdate dus niet alles weggooien: sensorsDataList.Clear();
-            OnDeserializedMethodNEW(context);
-
-            if (false)  // OUD DOEN WE NIET MEER.
-            {
-                if (raw.FF04 != null)
-                {
-                    foreach (string s in raw.FF04)
-                    {
-                        raw.ReadTTMPositionAndTTMId(this, s, (DateTime)ts);
-                    }
-                }
-                if (raw.FF02 != null)
-                {
-                    foreach (string s in raw.FF02)
-                    {
-                        raw.ReadTTMData(this, s, (DateTime)ts);
-                    }
-                }
-                if (raw.FC42 != null)
-                {
-                    foreach (string s in raw.FC42)
-                    {
-                        raw.ReadTireCondition2(this, s, (DateTime)ts);
-                    }
-                }
-             
-                if (raw.FEF4 != null)
-                {
-                    foreach (string s in raw.FEF4) //PGN FEF4 == 65268 “Tire Condition” of SAE J1939
-                    {
-                        raw.ReadTireCondition(this, s, (DateTime)ts);
-                    }
-                }
-            }
-        }
-    }
-
-    internal void OnDeserializedMethodNEW(StreamingContext context)
     {
         if (raw != null)
         {
@@ -196,11 +159,14 @@ public class Payload
                 {
                     uint location = Statics.GetBitsAt(s, 16, 8);
 
-                   // location += 1000; // DEBUG
+                    // location += 1000; // DEBUG
 
                     SensorData sd = GetOrAddSensorDataByLocation(location, "FF04 new", s);
                     sd.ProcessGraphicalPosition(s);   // thus set the location, and tireId and TTMid which is equals Sid.
                     sd.setTimestamp((DateTime)this.ts);
+
+                    //niet meer nodig want we bouwen de ttddatalijst een paar regels hieronder op:
+                    //raw.ReadTTMPositionAndTTMId(this, s, (DateTime)ts);
                 }
             }
             if (raw.FF02 != null)
@@ -218,6 +184,8 @@ public class Payload
                     {
                         sd.ProcessTTMData(s);
                     }
+                    //niet meer nodig want we bouwen de ttddatalijst een paar regels hieronder op:
+                    //raw.ReadTTMData(this, s, (DateTime)ts);
                 }
             }
 
@@ -226,10 +194,10 @@ public class Payload
                 foreach (string s in raw.FEF4) //PGN FEF4 == 65268 “Tire Condition” of SAE J1939
                 {
                     uint location = Statics.GetBitsAt(s, 0, 8);
-                    
-                   // location += 1000; // DEBUG
-                    
-                    SensorData sd = GetSensorDataByLocation(location, "FEF4 new",s);
+
+                    // location += 1000; // DEBUG
+
+                    SensorData sd = GetSensorDataByLocation(location, "FEF4 new", s);
                     if (sd != null)
                     {
                         sd.SetConditionFromFEF4(s);
@@ -242,7 +210,7 @@ public class Payload
                 foreach (string s in raw.FC42)
                 {
                     uint location = Statics.GetBitsAt(s, 0, 8);
-                    
+
                     //location += 1000; // DEBUG
 
                     SensorData sd = GetSensorDataByLocation(location, "FC42 new", s);
@@ -252,6 +220,20 @@ public class Payload
                     }
                 }
             }
+
+#if TTMDATA
+            // ttddatalijst bouwen
+            foreach (SensorData sd in sensorsDataList)
+            {
+                if (sd.ttmData != null)
+                {
+                    if (this.ttmDataList.Find(T=>T.TTMID == sd.ttmData.TTMID) == null)  
+                    {
+                        this.ttmDataList.Add(sd.ttmData);
+                    }
+                }
+            }
+#endif
         }
     }
 
@@ -270,50 +252,13 @@ public class Payload
     private SensorData GetSensorDataByLocation(uint location, string srcType, string src)
     {
         SensorData sd = sensorsDataList.Find(D => D.location == location);
-        //// DEBUG
-        //if (sd == null)
-        //{
-        //    sd = new SensorData();
-        //    sd.location = location;
-        //    sd.tireId = 999;
-        //    sensorsDataList.Add(sd);
-        //    sd.src = srcType + " : " + src;
-        //}
-        //// end debug
         return sd;
     }
     private SensorData GetSensorTireId(uint tireId, string srcType, string src)
     {
         SensorData sd = sensorsDataList.Find(D => D.tireId == tireId);
-        //// DEBUG
-        //if (sd == null)
-        //{
-        //    sd = new SensorData();
-        //    sd.location = 9999;
-        //    sensorsDataList.Add(sd);
-        //    sd.src = srcType + " : " + src;
-        //}
-        //// end debug
         return sd;
     }
-
-
-
-
-
-    //public string sSensorData
-    //{
-    //    get
-    //    {
-    //        string result = "";
-    //        foreach (SensorData sd in sensorsDataList)
-    //        {
-    //            result += string.Format("Loc={0} Pres1={1} Pres2={2} Temp={3}   ", sd.location, sd.pressure, sd.pressure2, sd.temperature);
-    //        }
-    //        return result;
-    //    }
-    //}
-
     public Boolean HasSensorData
     {
         get
@@ -322,20 +267,7 @@ public class Payload
         }
     }
 
-
-
-
-    public void EnrichSensorWithTTM()
-    {
-        foreach (SensorData sensorData in this.sensorsDataList)
-        {
-            sensorData.EnrichWithTTM(this.ttmDataList);
-        }
-    }
-
-
-
-    private Boolean SentGPSData(Boolean useTimeStampNow)
+    private Boolean SendGPSData(Boolean useTimeStampNow)
     {
         Boolean succesfull = true;
         string sJson;
@@ -368,6 +300,7 @@ public class Payload
 
     /// <summary>
     /// Send the masterdata to continental is something chnanged, and update the vehice.masterdataok boolean.
+    /// See SendMasterDataToContinentalBasedOnTTM below for old routine
     /// </summary>
     /// <param name="useTimeStampNow"></param>
     /// <returns></returns>
@@ -387,13 +320,28 @@ public class Payload
 
         Boolean metadataChanged = false;
         string why = "";
-        foreach (TTMData ttmData in this.ttmDataList)
+
+#if !TTMDATA
+        foreach (SensorData sensorData in this.sensorsDataList)  // was eerder  //.FindAll(S => S.ttmData != null))
         {
-            SensorMasterData smd = vehicle.GetOrAddSensorMasterData(ttmData.TTMID, ttmData.GraphicalPosition.ToString("X"),
+            SensorMasterData smd = vehicle.GetOrAddSensorMasterData(sensorData.sid.ToString(), sensorData.graphicalPosition.ToString("X"),
+                out Boolean tmpMetaDataChanged, out string tmpWhy);
+
+            metadataChanged = metadataChanged || tmpMetaDataChanged;
+            why += " " + tmpWhy;
+
+        }
+#endif
+
+#if TTMDATA
+            foreach (TTMData ttmData in this.ttmDataList)
+        {
+            SensorMasterData smd = vehicle.GetOrAddSensorMasterData(ttmData.TTMID.ToString(), ttmData.GraphicalPosition.ToString("X"),
                 out Boolean tmpMetaDataChanged, out string tmpWhy);
             metadataChanged = metadataChanged || tmpMetaDataChanged;
             why += " " + tmpWhy;
         }
+#endif
 
         if (metadataChanged)
         {
@@ -409,11 +357,21 @@ public class Payload
                     vehicleNr,
                     vehicle.clientMd().BaseUrl,
                     response.StatusCode, why);
+
+#if TTMDATA  //defined in 1st line of this document
+
                 foreach (TTMData ttmData in this.ttmDataList)
                 {
                     log.DebugFormat("Veh={0,4} pos={1,2} Sid={2} SidHex={2:X}",
                         vehicleNr, ttmData.tireLocation, ttmData.TTMID);
                 }
+#else
+                foreach (SensorData sensorData in this.sensorsDataList)
+                {
+                    log.DebugFormat("Veh={0,4} pos={1,2} Sid={2} SidHex={2:X}",
+                        vehicleNr, sensorData.location, sensorData.sid);
+                }
+#endif
                 log.DebugFormat("Json={0}",
                 sJson.Replace("\r\n", ""));
 
@@ -424,53 +382,53 @@ public class Payload
         return succesfull;
     }
 
-    /// <summary>
-    /// build a list of all sensors in this payload.
-    /// </summary>
-    /// <param name="useTimeStampNow"></param>
-    /// <param name="sensorsInThisPayload"></param>
-    /// <returns></returns> True : ok False: something wrong
-    public Boolean GetSensorsList(Boolean useTimeStampNow, out List<SensorData> sensorsInThisPayload)
-    {
-        Boolean result = true;
-        sensorsInThisPayload = new List<SensorData>();
 
-        //+
-        //---  Get al info from sensor data and ttm data.
-        //-
-        EnrichSensorWithTTM();
 
-        //+
-        //---  Build sensordata
-        //-
-        foreach (SensorData sensorData in this.sensorsDataList)
-        {
-            if (sensorData.SidOk())
-            {
-                sensorsInThisPayload.Add(sensorData);
 
-                //SensorData prevSend = Statics.getSensor(sensorData); // get previous data or add this one.
 
-                /*
-                if (prevSend == sensorData)
-                {
-                    // log.Debug("NEW");
-                    sensorData.why = "NEW";
-                    sensorData.doSendData = true;
-                }
-                if (!sensorData.doSendData)
-                {
-                    if (sensorData.SignificantChange(prevSend, out sensorData.why))
-                    {
-                        // log.DebugFormat("NEW {1} {0}", sensorData.Text(),sensorData.why);
-                        // log.DebugFormat("OLD {1} {0}", prevSend.Text(),sendorData.why);
-                        sensorData.doSendData = true;
-                    }
-                }*/
-            }
-        }
-        return result;
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public void FeedbackResponse(RestClient client, IRestResponse response)
     {
@@ -514,14 +472,14 @@ public class Payload
         public string[] FF02 { get; set; }  //      65.282   CPC TTM Data
         public string[] FF04 { get; set; }  //      65.284   CPC Graphical Position Configuration
 
-        [JsonIgnore]
-        public string sRaw
-        {
-            get
-            {
-                return RR_Serialize.JSON.ToString<Raw>(this);
-            }
-        }
+
+
+
+
+
+
+
+
 
         private string sArray(string[] a)
         {
@@ -553,41 +511,8 @@ public class Payload
         }
 
 
-        /// <summary>
-        /// PGN FEF4 == 65268 “Tire Condition” of SAE J1939
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="baseDateTime"></param>
-        public void ReadTireCondition(Payload payload, string value, DateTime baseDateTime)
-        {
-            //17T093647553;1;18fef433;00e100244100005f
-            //                        00e100244100005f
-            //                        00
-            //                          e1
-            //                            0024
-            //                                41
+#if TTMDATA  //defined in 1st line of this document
 
-            uint location = Statics.GetBitsAt(value, 0, 8); //00
-            SensorData sd = GetOrAddSensorData(payload, location, "FEF4 old", value);
-            sd.setTimestamp(baseDateTime);
-            sd.SetConditionFromFEF4(value);
-            //  Console.WriteLine(string.Format("'{0}'  {1}", value, sd.Text()));
-        }
-
-
-        /// <summary>
-        ///  PGN FC42 == 64578 “Tire Condition 2” of SAE J1939
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="baseDateTime"></param>
-        public void ReadTireCondition2(Payload payload, string value, DateTime baseDateTime)
-        {
-            uint location = Statics.GetBitsAt(value, 0, 8);
-            SensorData sd = GetOrAddSensorData(payload, location, "FC42 old", value);
-            sd.setTimestamp(baseDateTime);
-            sd.SetConditionFromFC42(value);
-            //   Console.WriteLine(string.Format("'{0}'  {1}", value, sd.Text()));
-        }
 
         /// <summary>
         /// FF02 CPC TTM Data
@@ -618,26 +543,6 @@ public class Payload
             sd.SetGraphicalPositionAndTTMId(value);
         }
 
-
-        /// <summary>
-        /// TODO: deze routine moet gewoon naar Payload, daar zit hij al dus deze mag weg.
-        /// </summary>
-        /// <param name="payload"></param>
-        /// <param name="location"></param>
-        /// <returns></returns>
-        internal SensorData GetOrAddSensorData(Payload payload, uint location, string srctype, string src)
-        {
-            SensorData sd = payload.sensorsDataList.Find(D => D.location == location);
-            if (sd == null)
-            {
-                sd = new SensorData();
-                sd.location = location;
-                payload.sensorsDataList.Add(sd);
-                sd.src = srctype + " : " + src;
-            }
-            return sd;
-        }
-
         private TTMData GetOrAddTTMData(Payload payload, uint ttmId, uint tireId)
         {
             TTMData ttm = payload.ttmDataList.Find(D => D.tireId == tireId /* &&  D.systemId == ttmId   /**/);
@@ -654,6 +559,106 @@ public class Payload
             }
             return ttm;
         }
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     }
 }

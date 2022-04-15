@@ -248,17 +248,9 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
                 {
 
                     payload.OnDeserializedMethod(new System.Runtime.Serialization.StreamingContext()); // DEBUG
-
-
-
-                    payload.EnrichSensorWithTTM();
                     bindingSource2.DataSource = payload.sensorsDataList;
                     gcTirePressure.RefreshDataSource();
                     //    RR.LibForXtragrid.SetMyDefaultXtraGridOptions(gridView2);
-
-                    bindingSource3.DataSource = payload.ttmDataList;
-                    gcValues.RefreshDataSource();
-                    //    RR.LibForXtragrid.SetMyDefaultXtraGridOptions(gridView3);
 
                     GridColumn col = gvPayload.Columns["FC42"];
                     if (col != null)

@@ -1,0 +1,10 @@
+master data ok json:
+{"axleNumber":2,"ccuId":"2232864","highTemperatureThreshold":80,"lowPressureThreshold":20,"sensors"
+:[{"position":"55","recommendedPressure":875000.0,"ttmId":"1872958032"},
+{"position":"59","recommendedPressure":875000.0,"ttmId":"1855848884"},
+{"position":"5B","recommendedPressure":875000.0,"ttmId":"1855878814"},
+{"position":"03","recommendedPressure":875000.0,"ttmId":"1872191809"},
+{"position":"0B","recommendedPressure":875000.0,"ttmId":"1871839232"},
+{"position":"53","recommendedPressure":875000.0,"ttmId":"1855879063"}],
+"ttmNumber":6,"veryLowPressureThreshold":50}
+

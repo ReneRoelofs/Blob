@@ -36,7 +36,6 @@ namespace BlobTester
             this.bsBlobItems = new System.Windows.Forms.BindingSource(this.components);
             this.bsVehicleInQueue = new System.Windows.Forms.BindingSource(this.components);
             this.bindingSource2 = new System.Windows.Forms.BindingSource(this.components);
-            this.bindingSource3 = new System.Windows.Forms.BindingSource(this.components);
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.timerShowQueueLen = new System.Windows.Forms.Timer(this.components);
             this.gbSelection = new System.Windows.Forms.GroupBox();
@@ -105,13 +104,9 @@ namespace BlobTester
             this.gcTirePressure = new DevExpress.XtraGrid.GridControl();
             this.gvTirePressure = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.gridView5 = new DevExpress.XtraGrid.Views.Grid.GridView();
-            this.gcValues = new DevExpress.XtraGrid.GridControl();
-            this.gvValues = new DevExpress.XtraGrid.Views.Grid.GridView();
-            this.gridView6 = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
-            this.splitContainer4 = new System.Windows.Forms.SplitContainer();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.lbVoortgang = new System.Windows.Forms.ToolStripStatusLabel();
             this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -137,7 +132,6 @@ namespace BlobTester
             ((System.ComponentModel.ISupportInitialize)(this.bsBlobItems)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bsVehicleInQueue)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource2)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource3)).BeginInit();
             this.gbSelection.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -158,9 +152,6 @@ namespace BlobTester
             ((System.ComponentModel.ISupportInitialize)(this.gcTirePressure)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gvTirePressure)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView5)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.gcValues)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.gvValues)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.gridView6)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -173,10 +164,6 @@ namespace BlobTester
             this.splitContainer3.Panel1.SuspendLayout();
             this.splitContainer3.Panel2.SuspendLayout();
             this.splitContainer3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).BeginInit();
-            this.splitContainer4.Panel1.SuspendLayout();
-            this.splitContainer4.Panel2.SuspendLayout();
-            this.splitContainer4.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -207,10 +194,6 @@ namespace BlobTester
             // bindingSource2
             // 
             this.bindingSource2.CurrentChanged += new System.EventHandler(this.bindingSource2_CurrentChanged);
-            // 
-            // bindingSource3
-            // 
-            this.bindingSource3.CurrentChanged += new System.EventHandler(this.bindingSource3_CurrentChanged);
             // 
             // openFileDialog1
             // 
@@ -748,7 +731,6 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem1.AccessibleName = "Position";
             this.bindingNavigatorPositionItem1.AutoSize = false;
-            this.bindingNavigatorPositionItem1.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem1.Name = "bindingNavigatorPositionItem1";
             this.bindingNavigatorPositionItem1.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem1.Text = "0";
@@ -885,7 +867,6 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem.AccessibleName = "Position";
             this.bindingNavigatorPositionItem.AutoSize = false;
-            this.bindingNavigatorPositionItem.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem.Name = "bindingNavigatorPositionItem";
             this.bindingNavigatorPositionItem.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem.Text = "0";
@@ -925,7 +906,7 @@ namespace BlobTester
             this.gcTirePressure.Location = new System.Drawing.Point(0, 0);
             this.gcTirePressure.MainView = this.gvTirePressure;
             this.gcTirePressure.Name = "gcTirePressure";
-            this.gcTirePressure.Size = new System.Drawing.Size(1039, 110);
+            this.gcTirePressure.Size = new System.Drawing.Size(1039, 207);
             this.gcTirePressure.TabIndex = 6;
             this.gcTirePressure.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
             this.gvTirePressure,
@@ -945,34 +926,6 @@ namespace BlobTester
             // 
             this.gridView5.GridControl = this.gcTirePressure;
             this.gridView5.Name = "gridView5";
-            // 
-            // gcValues
-            // 
-            this.gcValues.DataSource = this.bindingSource3;
-            this.gcValues.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.gcValues.Location = new System.Drawing.Point(0, 0);
-            this.gcValues.MainView = this.gvValues;
-            this.gcValues.Name = "gcValues";
-            this.gcValues.Size = new System.Drawing.Size(1039, 93);
-            this.gcValues.TabIndex = 8;
-            this.gcValues.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
-            this.gvValues,
-            this.gridView6});
-            this.gcValues.Click += new System.EventHandler(this.gridControl3_Click);
-            // 
-            // gvValues
-            // 
-            this.gvValues.Appearance.ViewCaption.Options.UseTextOptions = true;
-            this.gvValues.Appearance.ViewCaption.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Near;
-            this.gvValues.GridControl = this.gcValues;
-            this.gvValues.Name = "gvValues";
-            this.gvValues.OptionsView.ShowViewCaption = true;
-            this.gvValues.ViewCaption = "TTM FF02 ";
-            // 
-            // gridView6
-            // 
-            this.gridView6.GridControl = this.gcValues;
-            this.gridView6.Name = "gridView6";
             // 
             // splitContainer1
             // 
@@ -1026,28 +979,10 @@ namespace BlobTester
             // 
             // splitContainer3.Panel2
             // 
-            this.splitContainer3.Panel2.Controls.Add(this.splitContainer4);
+            this.splitContainer3.Panel2.Controls.Add(this.gcTirePressure);
             this.splitContainer3.Size = new System.Drawing.Size(1039, 374);
             this.splitContainer3.SplitterDistance = 163;
             this.splitContainer3.TabIndex = 0;
-            // 
-            // splitContainer4
-            // 
-            this.splitContainer4.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer4.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer4.Name = "splitContainer4";
-            this.splitContainer4.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainer4.Panel1
-            // 
-            this.splitContainer4.Panel1.Controls.Add(this.gcTirePressure);
-            // 
-            // splitContainer4.Panel2
-            // 
-            this.splitContainer4.Panel2.Controls.Add(this.gcValues);
-            this.splitContainer4.Size = new System.Drawing.Size(1039, 207);
-            this.splitContainer4.SplitterDistance = 110;
-            this.splitContainer4.TabIndex = 0;
             // 
             // statusStrip1
             // 
@@ -1198,7 +1133,6 @@ namespace BlobTester
             // 
             this.bindingNavigatorPositionItem2.AccessibleName = "Position";
             this.bindingNavigatorPositionItem2.AutoSize = false;
-            this.bindingNavigatorPositionItem2.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.bindingNavigatorPositionItem2.Name = "bindingNavigatorPositionItem2";
             this.bindingNavigatorPositionItem2.Size = new System.Drawing.Size(50, 23);
             this.bindingNavigatorPositionItem2.Text = "0";
@@ -1248,7 +1182,6 @@ namespace BlobTester
             ((System.ComponentModel.ISupportInitialize)(this.bsBlobItems)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.bsVehicleInQueue)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource2)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.bindingSource3)).EndInit();
             this.gbSelection.ResumeLayout(false);
             this.gbSelection.PerformLayout();
             this.groupBox1.ResumeLayout(false);
@@ -1275,9 +1208,6 @@ namespace BlobTester
             ((System.ComponentModel.ISupportInitialize)(this.gcTirePressure)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gvTirePressure)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView5)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.gcValues)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.gvValues)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.gridView6)).EndInit();
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
@@ -1293,10 +1223,6 @@ namespace BlobTester
             this.splitContainer3.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
             this.splitContainer3.ResumeLayout(false);
-            this.splitContainer4.Panel1.ResumeLayout(false);
-            this.splitContainer4.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
-            this.splitContainer4.ResumeLayout(false);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
             this.tabControl1.ResumeLayout(false);
@@ -1316,7 +1242,6 @@ namespace BlobTester
         #endregion
         private System.Windows.Forms.BindingSource bsPayload;
         private System.Windows.Forms.BindingSource bindingSource2;
-        private System.Windows.Forms.BindingSource bindingSource3;
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
         private System.Windows.Forms.BindingSource bsBlobFiles;
         private System.Windows.Forms.Timer timerShowQueueLen;
@@ -1382,13 +1307,9 @@ namespace BlobTester
         private DevExpress.XtraGrid.GridControl gcTirePressure;
         private DevExpress.XtraGrid.Views.Grid.GridView gvTirePressure;
         private DevExpress.XtraGrid.Views.Grid.GridView gridView5;
-        private DevExpress.XtraGrid.GridControl gcValues;
-        private DevExpress.XtraGrid.Views.Grid.GridView gvValues;
-        private DevExpress.XtraGrid.Views.Grid.GridView gridView6;
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.SplitContainer splitContainer2;
         private System.Windows.Forms.SplitContainer splitContainer3;
-        private System.Windows.Forms.SplitContainer splitContainer4;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel lbVoortgang;
         private System.Windows.Forms.GroupBox groupBox1;

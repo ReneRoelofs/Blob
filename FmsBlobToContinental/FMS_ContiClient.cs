@@ -37,9 +37,9 @@ namespace FmsBlobToContinental
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public void DemoGPS()
         {
-            var client = new CCRestClient(TestProd.Test,  "vehiclead/gps/X-A654");
-         //   client.Timeout = -1;
-            var request = new CCRestRequest(Method.PUT,TestProd.Test);
+            var client = new CCRestClient(TestProd.Test, "vehiclead/gps/X-A654");
+            //   client.Timeout = -1;
+            var request = new CCRestRequest(Method.PUT, TestProd.Test);
 
             /// create dummy gpsData from Json proviced by Continental-example
             GpsData gpsData = RR_Serialize.JSON.FromString<GpsData>(
@@ -68,8 +68,8 @@ namespace FmsBlobToContinental
         public void DemoSensor()
         {
 
-            var request = new CCRestRequest(Method.PUT,TestProd.Test);
-          
+            var request = new CCRestRequest(Method.PUT, TestProd.Test);
+
             SensorData sd = new SensorData();
             sd.sid = "11";
             RestClient client;
