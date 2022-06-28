@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -19,7 +20,7 @@ namespace FmsBlobToContinental
         public uint Pressure;
     }
 
-    public class CCVehicle
+    public class CCVehicle : IComparable<CCVehicle>
     {
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -50,14 +51,29 @@ namespace FmsBlobToContinental
             }
         }
 
-        public string agentSerialNumber { get; set; }
+        [OnSerialized]
+        public void onSerialized()
+        {
+            if (sensorsMasterDataList != null)
+            {
+                sensorsMasterDataList.vehicle = this;
+            }
+            else
+            {
+                sensorsMasterDataList = new SensorMasterDataList(this);
+            }
+        }
 
+        public int CompareTo(CCVehicle obj)
+        {
+            return iVehicleNumber.CompareTo(obj.iVehicleNumber);
+        }
+
+        public string agentSerialNumber { get; set; }
         [XmlIgnore]
         public GpsData gpsData;
-        [XmlIgnore]
-        public List<SensorMasterData> sensorsMasterDataList = new List<SensorMasterData>();
-        [XmlIgnore]
-        public Boolean masterdataOk = true;
+        //[XmlIgnore]
+        public SensorMasterDataList sensorsMasterDataList;
         [XmlIgnore]
         public List<SensorData> sensorsDataList = new List<SensorData>();
         public TestProd testProd = TestProd.Test;
@@ -66,21 +82,23 @@ namespace FmsBlobToContinental
 
         public List<SimpleSensorInfo> simpleSensorInfo = new List<SimpleSensorInfo>();
 
+        /// <summary>
+        ///  constructor for serializing
+        /// </summary>
         public CCVehicle()
         {
-            //+
-            //--- constructor for serializing
-            //-
+          
         }
 
-        public CCVehicle(string vehicleNumber = "0000")
+        public CCVehicle(string vehicleNumber = "0000", TestProd testProd = TestProd.Prod)
         {
             this.vehicleNumber = vehicleNumber;
             // create some dummy gps data.
-            SetLatLon(51.976, 4.612);
+            SetLatLon(51.976, 4.612, DateTime.Now);
+            sensorsMasterDataList = new SensorMasterDataList(this);
         }
 
-     
+
         public string P0 { get { return SensorOnPosition(0); } }
         public string P1 { get { return SensorOnPosition(1); } }
         public string P16 { get { return SensorOnPosition(16); } }
@@ -94,16 +112,19 @@ namespace FmsBlobToContinental
             SimpleSensorInfo si = simpleSensorInfo.Find(S => S.location == location);
             if (si != null)
             {
-                return string.Format("{0} {1} {2} Degr {3} Bar",si.HexId, si.Updated, si.Temp, si.Pressure);
+                string time = string.Format("{0:HH:mm}", si.Updated);
+                string date = string.Format("{0:dd-MM}", si.Updated);
+                if (si.Updated.Date == this.timestampSendToContinental.Date)
+                {
+                    date = "";
+                }
+                return string.Format("{0} {1} gr {2:0.0} bar   {3} {4}", si.HexId, si.Temp, si.Pressure/100000.0, time, date);
             }
             else
             {
                 return "-";
             }
         }
-
-
-
         /// <summary>
         /// Find a sensorMasterdata by ttmId, add if not found yet
         /// </summary>
@@ -111,44 +132,20 @@ namespace FmsBlobToContinental
         /// <param name="graphicalPosition"></param>
         /// <param name="somethingChanged">true if not already known, false otherwise</param>
         /// <returns></returns>
-        public SensorMasterData GetOrAddSensorMasterData(string sid, string graphicalPosition, out Boolean somethingChanged, out string why)
+        public SensorMasterData GetOrAddSensorMasterData(uint sid, string graphicalPosition)
         {
-            if (graphicalPosition.Length <= 1)
-            {
-                graphicalPosition = "0" + graphicalPosition;
-            }
-            somethingChanged = false;
-            why = "NoChange";
-            SensorMasterData result = sensorsMasterDataList.Find(S => S.ttmId == sid);
-            if (result == null)
-            {
-                result = new SensorMasterData { position = graphicalPosition, ttmId = sid };
-                //+
-                //--- let op alleen goede sensoren met een juist ttm id toe te voegen,
-                //-
-                if (result.ttmId.Length >= 9)
-                {
-                    sensorsMasterDataList.Add(result);
-                    somethingChanged = true;
-                    why = "NewSensorFound";
-                }
-            }
-            if (result.position != graphicalPosition)
-            {
-                why = "SensorPosistionChanged";
-                somethingChanged = true;
-            }
-            return result;
+            return sensorsMasterDataList.GetOrAddSensorMasterData(sid, graphicalPosition, out Boolean somethingChanged);
         }
 
-        public void SetLatLon(double lat, double lon)
+        public void SetLatLon(double? lat, double? lon, DateTime? ts)
         {
             if (gpsData == null)
             {
                 gpsData = new GpsData();
             }
-            gpsData.lat = lat;
-            gpsData.lon = lon;
+            gpsData.lat = (double)lat;
+            gpsData.lon = (double)lon;
+            gpsData.setTimestamp((DateTime)ts);
         }
 
         CCRestClient _clientGps;
@@ -164,23 +161,10 @@ namespace FmsBlobToContinental
 
         }
 
-        CCRestClient _clientMd;
-        public CCRestClient clientMd()
-        {
-            string path = "vehiclemd/vehicles/";
-            string url = string.Format("{0}{1}", path, vehicleNumber);
-            if (_clientMd == null || (_clientMd.BaseUrl.ToString().EndsWith(url)))
-            {
-                _clientMd = new CCRestClient(this.testProd, url);
-            }
-            return _clientMd;
-
-        }
 
 
         public IRestResponse SendGPS()
         {
-
             var request = new CCRestRequest(Method.PUT, this.testProd);
 
             /// create dummy gpsData from Json proviced by Continental-example
@@ -194,70 +178,21 @@ namespace FmsBlobToContinental
             IRestResponse response = clientGps().Execute(request);
             if (Statics.DetailedContiLogging && response.StatusCode != System.Net.HttpStatusCode.OK)
             {
-                FeedbackResponse(clientGps(), response);
+                Statics.FeedbackResponse(clientGps(), response);
             }
             return response;
         }
 
-        public IRestResponse SendMD(out string sJson)
+        public IRestResponse SendMD()
         {
-            var request = new CCRestRequest(Method.PUT, this.testProd);
-
-            VehicleMD vehicleMd = new VehicleMD();
-            vehicleMd.axleNumber = 2; // voor 2 banden en achter 4 banden.
-            //vehicleMd.ccuId = vehicleNumber + "_FC55"; // ccuid in hex 
-            vehicleMd.ccuId = agentSerialNumber;
-            vehicleMd.highTemperatureThreshold = 80; // alarm bij 80 *C
-            vehicleMd.lowPressureThreshold = 20;  // alarm bij 20% afwijking
-            vehicleMd.veryLowPressureThreshold = 50; // alarm bij 50% afwijking
-
-            vehicleMd.sensors = sensorsMasterDataList.ToArray();
-            vehicleMd.ttmNumber = sensorsMasterDataList.Count;
-
-
-            // put the Data as json in the request.
-            sJson = vehicleMd.Json();
-            request.AddParameter("application/json", sJson, ParameterType.RequestBody);
-
-            // see what happens.
-            IRestResponse response = clientMd().Execute(request);
-            return response;
-            //Statics.WriteFeedbackToConsole(clientMd, response);
-
+            if (sensorsMasterDataList.vehicle == null)
+            {
+                sensorsMasterDataList.vehicle = this;
+            }
+            IRestResponse result = sensorsMasterDataList.SendMD();
+            return result;
         }
 
-        /* public void SendSensors()  ==> dit zit nu in SendSensorDataContinental in CloudFmsPayload.cs*/
-        // goto: CloudFmsPayload.cd/payload.SendSensorDataContinental
-            /*
-         {
-             // SensorData sd = new SensorData();
-             string path = "sensorad/sensors/";
-             CCRestClient client;
-
-
-             foreach (SensorData sensorData in sensorsDataList)
-             {
-                 sensorData.setTimestamp(DateTime.Now);
-                 SensorMasterData sensorMd = sensorsMasterDataList[sensorsDataList.IndexOf(sensorData)];
-                 sensorData.sid = sensorMd.ttmId;
-                 //  sensorData.sidHex = sensor.
-                 // 'random' temperatures
-                 // sensorData.temperature = (DateTime.Now.Second);
-
-                 client = new CCRestClient(this.testProd, string.Format("{0}{1}", path, sensorData.sid));
-                 var request = new CCRestRequest(Method.PUT, this.testProd);
-
-                 // put the Data as json in the request.
-                 request.SetBody(sensorData.Json());
-                 // send to continental
-                 IRestResponse response = client.Execute(request);
-                 if (Statics.DetailedContiLogging)
-                 {
-                     FeedbackResponse(client, response);
-                 }
-                 //break; // even alleen het eerste wiel
-             }
-         }*/
 
 
         public string Text2()
@@ -265,14 +200,13 @@ namespace FmsBlobToContinental
             return string.Format("{0} {1} {2:yyyy-MM-dd HH:mm:ss}", vehicleNumber, agentSerialNumber, timestampSendToContinental);
         }
 
-
         public string Text()
         {
             string result = "";
-            result += string.Format("Vehicle {0}  {1} {2}\r\n", vehicleNumber, clientGps().BaseUrl, clientMd().BaseUrl);
-            foreach (SensorMasterData sensorMd in sensorsMasterDataList)
+            result += string.Format("Vehicle {0}  {1} {2}\r\n", vehicleNumber, clientGps().BaseUrl, sensorsMasterDataList.clientMd().BaseUrl);
+            foreach (SensorMasterData sensorMd in sensorsMasterDataList.theList)
             {
-                SensorData sensorData = sensorsDataList[sensorsMasterDataList.IndexOf(sensorMd)];
+                SensorData sensorData = sensorsDataList[sensorsMasterDataList.theList.IndexOf(sensorMd)];
                 result += string.Format("{0} {1}\r\n", sensorMd.Text(), sensorData.Text());
             }
             return result;
@@ -293,30 +227,7 @@ namespace FmsBlobToContinental
                 si.Temp = temp;
                 si.Pressure = pressure;
             }
+            timestampSendToContinental = UpdatedAtContinental;
         }
-
-
-        public void FeedbackResponse(RestClient client, IRestResponse response)
-        {
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                log.Warn("Feedback from WebClient:");
-                log.Warn("URL: " + client.BaseUrl);
-                log.Warn("error:   " + response.ErrorMessage);
-                log.Warn("content: " + response.Content);
-                log.Warn("status:  " + response.StatusCode);
-            }
-            else
-            {
-                /*
-                log.Debug("Feedback from WebClient:");
-                log.Debug("URL: " + client.BaseUrl);
-                log.Debug("error:   " + response.ErrorMessage);
-                log.Debug("content: " + response.Content);
-                log.Debug("status:  " + response.StatusCode);
-                */
-            }
-        }
-
     }
 }

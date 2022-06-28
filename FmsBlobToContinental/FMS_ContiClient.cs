@@ -60,7 +60,7 @@ namespace FmsBlobToContinental
 
             if (Statics.DetailedContiLogging)
             {
-                FeedbackResponse(client, response);
+                Statics.FeedbackResponse(client, response);
             }
 
         }
@@ -92,7 +92,7 @@ namespace FmsBlobToContinental
             IRestResponse response = client.Execute(request);
             if (Statics.DetailedContiLogging)
             {
-                FeedbackResponse(client, response);
+                Statics.FeedbackResponse(client, response);
             }
 
         }
@@ -116,12 +116,12 @@ namespace FmsBlobToContinental
 
             List<SensorMasterData> tmpList = new List<SensorMasterData>();
 
-            tmpList.Add(new SensorMasterData { position = "03", ttmId = "11" });  //left front
-            tmpList.Add(new SensorMasterData { position = "0B", ttmId = "12" });  //right front
-            tmpList.Add(new SensorMasterData { position = "53", ttmId = "13" });  //left-left rear
-            tmpList.Add(new SensorMasterData { position = "55", ttmId = "14" });   //etc
-            tmpList.Add(new SensorMasterData { position = "59", ttmId = "15" });
-            tmpList.Add(new SensorMasterData { position = "5B", ttmId = "16" });
+            tmpList.Add(new SensorMasterData { position = "03", ttmId = 11 });  //left front
+            tmpList.Add(new SensorMasterData { position = "0B", ttmId = 12 });  //right front
+            tmpList.Add(new SensorMasterData { position = "53", ttmId = 13 });  //left-left rear
+            tmpList.Add(new SensorMasterData { position = "55", ttmId = 14 });   //etc
+            tmpList.Add(new SensorMasterData { position = "59", ttmId = 15 });
+            tmpList.Add(new SensorMasterData { position = "5B", ttmId = 16 });
 
             vehicleMd.sensors = tmpList.ToArray();
             vehicleMd.ttmNumber = tmpList.Count;
@@ -135,30 +135,9 @@ namespace FmsBlobToContinental
             IRestResponse response = client.Execute(request);
             if (Statics.DetailedContiLogging)
             {
-                FeedbackResponse(client, response);
+                Statics.FeedbackResponse(client, response);
             }
         }
-
-        public void FeedbackResponse(RestClient client, IRestResponse response)
-        {
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                log.Warn("Feedback from WebClient:");
-                log.Warn("URL: " + client.BaseUrl);
-                log.Warn("error:   " + response.ErrorMessage);
-                log.Warn("content: " + response.Content);
-                log.Warn("status:  " + response.StatusCode);
-            }
-            else
-            {
-                //log.Debug("Feedback from WebClient:");
-                //log.Debug("URL: " + client.BaseUrl);
-                //log.Debug("error:   " + response.ErrorMessage);
-                //log.Debug("content: " + response.Content);
-                //log.Debug("status:  " + response.StatusCode);
-            }
-        }
-
 
         private void OldStuff()
         {

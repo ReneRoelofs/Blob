@@ -55,6 +55,13 @@ namespace BlobContinentalUpdater
         public BlobContinentalUpdaterService()
         {
             InitializeComponent();
+
+            //CanShutdown = true;
+            CanHandlePowerEvent = true;
+            //CanHandleSessionChangeEvent = true;
+            //Microsoft.Win32.SystemEvents.SessionEnded += new Microsoft.Win32.SessionEndedEventHandler(SystemEvents_SessionEnded);
+
+            log.Info("CanHandlePowerEvent set");
         }
 
         protected override void OnStart(string[] args)
@@ -62,6 +69,10 @@ namespace BlobContinentalUpdater
             try
             {  // test voor git
                 log.Info("**************** START  *************     Versie   " + RR.RR_Assembly.AssemblyVersionPlusBuildDateTimeEXE);
+
+
+
+
                 //+
                 //--- prepare the test prod and create the distributer
                 //-
@@ -83,9 +94,20 @@ namespace BlobContinentalUpdater
                 //--- run the continental updater in a loop
                 //-
                 continentalUpdater = new ContinentalUpdater();
+                cts = new CancellationTokenSource();
                 Task.Run(() =>
                 {
-                    log.InfoFormat("Starting DoNowInALoop");
+                    string url = "";
+                    if (testProd == TestProd.Prod)
+                    {
+                        url = FmsBlobToContinental.Properties.Settings.Default.hostNameProd;
+                    }
+                    else
+                    {
+                        url = FmsBlobToContinental.Properties.Settings.Default.hostNameTest;
+                    }
+                    log.InfoFormat("Starting DoNowInALoop testProd={0} url={1}", testProd.ToString(), url);
+                    
                     continentalUpdater.DoNowInALoop(testProd, onlyVehicle: "", cts.Token);
                     if (cts.Token.IsCancellationRequested)
                     {
@@ -107,6 +129,48 @@ namespace BlobContinentalUpdater
 
         }
 
+        //protected override void OnShutdown()
+        //{
+        //    log.Info("SHUT DOWN.....");
+        //    Thread.Sleep(TimeSpan.FromSeconds(3));
+        //    OnStop();
+        //    base.OnShutdown();//Don't forget to call ServiceBase OnShutdown()
+        //}
+
+        //protected override void OnSessionChange(SessionChangeDescription changeDescription)
+        //{
+        //    log.Info("OnSessionChange.....");
+        //    Thread.Sleep(TimeSpan.FromSeconds(3));
+        //    Do something
+        //    base.OnSessionChange(changeDescription);
+        //}
+
+        protected override bool OnPowerEvent(PowerBroadcastStatus powerStatus)
+        {
+            log.Info("OnPowerEvent....." + powerStatus.ToString());
+            //if (powerStatus == PowerBroadcastStatus.Suspend)
+            //{
+            //    //cts.Cancel();
+            //    ////Thread.Sleep(TimeSpan.FromSeconds(3));
+            //    //base.RequestAdditionalTime(1000 * 5);
+            //    log.Info("Power suspend, call OnStop()");
+            //    OnStop();
+            //    log.Info("OnPowerEvent2.....");
+            //}
+            //else if (powerStatus == PowerBroadcastStatus.ResumeSuspend)
+            //{
+            //    log.Info("Power resumeSuspend, call OnStart()");
+            //    //cts.Cancel(); // voor de zekerheid even de oude tasks cancelen.
+            //    OnStart(null);
+            //}
+            return base.OnPowerEvent(powerStatus);
+        }
+        //void SystemEvents_SessionEnded(object sender, Microsoft.Win32.SessionEndedEventArgs e)
+        //{
+        //    log.Info("SystemEvents_SessionEnded.....");
+        //    Thread.Sleep(TimeSpan.FromSeconds(3));
+        //    //your code here
+        //}
         protected override void OnStop()
         {
             log.Info("STOPPING.....");

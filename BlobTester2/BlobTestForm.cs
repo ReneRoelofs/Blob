@@ -74,7 +74,6 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
 
 
             //    DevExpress.Data.CurrencyDataController.DisableThreadingProblemsDetection = true;
-            rbProdBlob.Checked = RR.MyRegistry.GetBoolean(rbProdBlob.Name, false);
 
             dtSince.Value = RR.MyRegistry.GetDate(dtSince.Name, DateTime.Now.AddDays(-7));
             dtSinceTime.Value = RR.MyRegistry.GetDate(dtSinceTime.Name, dtSince.Value);
@@ -99,6 +98,10 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             }
 
             continentalUpdater = new ContinentalUpdater();
+            //+
+            //--- dit moet na de new ContinetalUpdater want de checkbox zet de testProd daarvan.
+            //-
+            rbProdBlob.Checked = RR.MyRegistry.GetBoolean(rbProdBlob.Name, false);
 
 
             bsVehiclesAndSensors.DataSource = FmsBlobToContinental.Statics.vehicleList;
@@ -164,6 +167,22 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
         private void rbProd_CheckedChanged(object sender, EventArgs e)
         {
             RR.MyRegistry.PutBoolean(rbProdBlob.Name, rbProdBlob.Checked);
+
+            if (((RadioButton)sender).Checked)
+            {
+
+                if (continentalUpdater != null)
+                {
+                    if (rbProdBlob.Checked)
+                    {
+                        continentalUpdater.TestProd = TestProd.Prod;
+                    }
+                    else
+                    {
+                        continentalUpdater.TestProd = TestProd.Test;
+                    }
+                }
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -386,9 +405,11 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
         {
             lbBlobQueue.Text = continentalUpdater.Text();
             FmsBlobToContinental.Statics.SaveSensorList();
-            FmsBlobToContinental.Statics.SaveVehicleList();
+         
+            // even niet
+            // FmsBlobToContinental.Statics.SaveVehicleList();
+            
             //gcVehicleInQueue.RefreshDataSource();
-
         }
 
         private void cbUseRecentDate_CheckedChanged(object sender, EventArgs e)
@@ -976,6 +997,23 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
                 }
                 FmsBlobToContinental.Statics.ReplaceSensorInList(prevSend, sd);
             }
+        }
+
+        private void toolStripLabel1_Click_1(object sender, EventArgs e)
+        {
+            RRXtra.LibForXtragrid.ExportToXLSX(gvVehiclesAndSensors);
+        }
+
+        private void gcVehiclesAndSensors_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void toolStripButtonRefresh_Click(object sender, EventArgs e)
+        {
+            FmsBlobToContinental.Statics.ReloadVehicleList();
+            bsVehiclesAndSensors.DataSource = FmsBlobToContinental.Statics.vehicleList;
+            gcVehiclesAndSensors.RefreshDataSource();
         }
     }
 }

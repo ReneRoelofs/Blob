@@ -35,27 +35,30 @@ namespace BlobHandler
         /// <param name="onlyVehicle">Only for a specific vehicle</param>
         /// <param name="downloadToFile">Download the blob to local download dir 'onlyVehicle' is obliged</param>
         /// <returns></returns>
-        public async Task<List<BlobItem>> GetBlobItemsASync(
+        public async Task<int> GetBlobItemsASync(
             TestProd testProd,
             DateTime sinceUTC,
             DateTime? untilUTC,
             bool downloadToFile,
             string onlyVehicle,
-            CancellationToken ct)
+            CancellationToken ct
+            )
         {
-
-            List<BlobItem> result = new List<BlobItem>();
-             await Task.Run(() =>
-            {
-                GetBlobItems(testProd, sinceUTC, untilUTC, downloadToFile, onlyVehicle, ct);
-            }
+            int nItemsFound = 0;
+            //List<BlobItem> result = new List<BlobItem>();
+            await Task.Run(() =>
+              {
+                 nItemsFound = GetBlobItems(testProd, sinceUTC, untilUTC, downloadToFile, onlyVehicle, ct);
+              }
             );
             log.InfoFormat("GetBlobs() finished");
-            return result;
+            //return result;
+            return nItemsFound;
         }
 
 
-        public List<BlobItem> GetBlobItems(
+        //public List<BlobItem> GetBlobItems(
+        public int GetBlobItems(
             TestProd testProd,
             DateTime sinceUTC,
             DateTime? untilUTC,
@@ -64,12 +67,14 @@ namespace BlobHandler
             CancellationToken ct)
         {
             containerClient = Statics.GetContainerClient(testProd);
+            int nItemsFound = 0;
             //+
             //--- get all blobs in prefix '2021/12/08'
             //-
             int i = 1;
             BlobFileName blobFilename = new BlobFileName();
-            List<BlobItem> result = new List<BlobItem>();
+            //niet meer onthouden vanwege memory..
+            //List<BlobItem> result = new List<BlobItem>();
             Boolean UntilNow = false;
             if (untilUTC == null)
             {
@@ -86,11 +91,15 @@ namespace BlobHandler
                 // {
                 if (!string.IsNullOrEmpty(onlyVehicle))
                 {
-                    log.InfoFormat("GetBlobs() since {0:u} up to {1:u} prefix {2} only for vehicle {3}", sinceUTC, untilUTC, myPrefix, onlyVehicle);
+                    log.InfoFormat("Mem={0} GetBlobs() since {1:u} up to {2:u} prefix {3} only for vehicle {4}",
+                        RR.Lib.MemoryUsageStringShort(),
+                        sinceUTC, untilUTC, myPrefix, onlyVehicle);
                 }
                 else
                 {
-                    log.InfoFormat("GetBlobs() since {0:u} up to {1:u} prefix {2}", sinceUTC, untilUTC, myPrefix);
+                    log.InfoFormat("Mem={0} GetBlobs() since {1:u} up to {2:u} prefix {2}",
+                            RR.Lib.MemoryUsageStringShort(),
+                            sinceUTC, untilUTC, myPrefix);
                 }
 
                 //+
@@ -104,7 +113,7 @@ namespace BlobHandler
                     {
                         break;
                     }
-
+                    nItemsFound++;
                     BlobItem blobItem = enumerator.Current;
                     blobFilename.Name = blobItem.Name; // thus get the vehiclenumber and date from the filename.
                     Boolean addToResult = true;
@@ -127,7 +136,8 @@ namespace BlobHandler
                     }
                     if (addToResult)
                     {
-                        result.Add(blobItem);
+                        // niet meer onthouden vanwege memory
+                        // result.Add(blobItem);
                         //  log.DebugFormat("#blobsSeen={0} #blobsSelected={1} blobName={2} Dated={3} ", 
                         //      i, result.Count, blobItem.Name, blobItem.Properties.LastModified);
                         if (OnHandleBlob != null)
@@ -140,8 +150,9 @@ namespace BlobHandler
                         }
                     }
                     i++;
+                    blobItem = null;// dispose needed??
                 }
-                log.InfoFormat("GotBlobs   since {0:u} up to {1:u} ==> Total={2}", sinceUTC, untilUTC, result.Count);
+                log.InfoFormat("Mem={0} GotBlobs   since {1:u} up to {2:u} ==> Total={3}", RR.Lib.MemoryUsageStringShort(), sinceUTC, untilUTC, nItemsFound);
 
 
                 sinceUTC = sinceUTC.AddDays(1);
@@ -161,7 +172,8 @@ namespace BlobHandler
              //-
 
             //result.Sort((x, y) => ((DateTimeOffset)x.Properties.LastModified).CompareTo((DateTimeOffset)y.Properties.LastModified));
-            return result;
+            //return result;
+            return nItemsFound;
         }
 
 

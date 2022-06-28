@@ -42,7 +42,21 @@ namespace Blob3
         Stopwatch getterStopWatch = new Stopwatch();
         int getterAmmount = 0;
 
-
+        /// <summary>
+        /// Get Testprod. 
+        /// Set Testprod en thus TestProd for all vehicles in the vehicleSenderList.
+        /// </summary>
+        public TestProd TestProd
+        {
+            get
+            {
+                return vehicleSenderList.TestProd;
+            }
+            set
+            {
+                vehicleSenderList.TestProd = value;
+            }
+        }
 
         /*****
         /// <summary>
@@ -162,6 +176,7 @@ namespace Blob3
         */
 
 
+
         /// <summary>
         /// Update to continental in a loop for the pas half hour. Used in the form for testing
         /// </summary>
@@ -172,8 +187,9 @@ namespace Blob3
         {
             try
             {
+                RestartAllVehicles(ct);
                 running = true;
-                List<BlobItem> items = new List<BlobItem>();
+                //List<BlobItem> items = new List<BlobItem>();
                 containerClient = BlobHandler.Statics.GetContainerClient(testProd);
                 this.ct = ct;
 
@@ -181,7 +197,8 @@ namespace Blob3
                 {
                     DateTime until = StartOneRun(paramSince);
                     BlobHandler.BlobItemList blobItemlist = new BlobHandler.BlobItemList(DownloadAndEnqueueToSend);
-                    items = await blobItemlist.GetBlobItemsASync(
+                    int nItems = 0;
+                    nItems = await blobItemlist.GetBlobItemsASync(
                         testProd,
                         since,
                         until,
@@ -189,7 +206,7 @@ namespace Blob3
                         onlyVehicle: onlyVehicle,
                         ct);
 
-                    DoneOneRun(items.Count);
+                    DoneOneRun(nItems);
                     WaitForEmpty(ct);
                 }
             }
@@ -212,23 +229,28 @@ namespace Blob3
             try
             {
                 containerClient = BlobHandler.Statics.GetContainerClient(testProd);
+                vehicleSenderList.TestProd = testProd;
+                RestartAllVehicles(ct);
                 running = true;
-                List<BlobItem> items = new List<BlobItem>();
+                //List<BlobItem> items = new List<BlobItem>();
                 this.ct = ct;
 
                 while (!ct.IsCancellationRequested)
                 {
                     DateTime until = StartOneRun(paramSince);
                     BlobHandler.BlobItemList blobItemlist = new BlobHandler.BlobItemList(DownloadAndEnqueueToSend);
-                    items = blobItemlist.GetBlobItems(
+                    int nItems;
+
+                    nItems = blobItemlist.GetBlobItems(
                         testProd,
                         since,
                         until,
                         downloadToFile: false,
                         onlyVehicle: onlyVehicle,
                         ct);
-
-                    DoneOneRun(items.Count);
+                    //  nItems = items.Count;
+                    // items.Clear();
+                    DoneOneRun(nItems);
                     WaitForEmpty(ct);
                 }
             }
@@ -238,6 +260,15 @@ namespace Blob3
             }
             running = false;
             log.DebugFormat("Done in a Loop");
+        }
+
+
+        private void RestartAllVehicles(CancellationToken ct)
+        {
+            foreach (VehicleWithSendQueue vehicle in vehicleSenderList)
+            {
+                vehicle.StartSenderTasks(ct);
+            }
         }
 
         private DateTime StartOneRun(DateTime? paramSince)
@@ -298,11 +329,30 @@ namespace Blob3
                 {
                     log.Info("Cancelation requested");
                 }
+
+                if (Empty())
+                {
+                    log.DebugFormat("No need to wait. Queues are empty.");
+                }
+
                 while (!Empty())
                 {
                     log.DebugFormat("Waiting until empty. ");
                     log.DebugFormat("Waiting until queue is empty. nItmes in queue = {0} mem = {1}", ItemsInQueue(), RR.Lib.MemoryUsageStringShort());
-                    MyWait(5);//
+
+                    int n = ItemsInQueue();
+                    MyWait(20);
+
+                    //+
+                    //--- debug: als er na 20 seconden wachten nog steeds even veel items in de queue zitten dan is er iets raars aan de hand\
+                    //---        dus gaan we die even debuggen.
+                    //-
+                    if (ItemsInQueue() == n)
+                    {
+                        log.Warn("********************************** queue raakt niet leeg we maken alles leeg *****************************");
+                        DebugQueueInfo();
+                        FlushAllQueues();
+                    }
                     if (ct.IsCancellationRequested)
                     {
                         break;
@@ -403,16 +453,14 @@ namespace Blob3
         /// indicate the status of the vehiclequeues. (first 20)
         /// </summary>
         /// <returns></returns>
-        public void DebugQueueInfo()
+        private void DebugQueueInfo()
         {
             int i = 0;
             int t = 0;
             foreach (VehicleWithSendQueue vc in vehicleSenderList)
             {
                 t += vc.blobItemQueueCount;
-                log.DebugFormat("VehSender {0} {1} items in queue  {2} sensors msg: T={3} F={4} S={5} D={6} GrandTot={7}",
-                    vc.vehicleNumber, vc.blobItemQueueCount, vc.sensorDataListAll.Count,
-                    vc.nTotal, vc.nFailed, vc.nSucces, vc.nDownload, t);
+                log.Debug(vc.DebugQueueInfo(t));
                 i++;
                 if (i > 100)
                 {
@@ -421,7 +469,13 @@ namespace Blob3
             }
         }
 
-
+        private void FlushAllQueues()
+        {
+            foreach (VehicleWithSendQueue vc in vehicleSenderList)
+            {
+                vc.FlushQueue();
+            }
+        }
 
         /// <summary>
         /// Put a new blobitem in the vehicle's queue in order to send the data.
@@ -434,6 +488,7 @@ namespace Blob3
 
 
             CCVehicle vehicle = Statics.vehicleList.GetOrAdd(blobFilename.vehicleNumber, blobFilename.AgentSerialNumber);
+            vehicle.testProd = this.TestProd;
             vehicle.timestampFileSeen = blobFilename.timeStamp;
 
             //DateTime lastModified = (((DateTimeOffset)blobItem.Properties.LastModified).ToUniversalTime()).DateTime;
@@ -442,19 +497,18 @@ namespace Blob3
                 RR.MyRegistry.PutDate("latestModified", blobFilename.timeStamp);
                 this.since = blobFilename.timeStamp;
             }
-
             //+
             //--- create a vehiclesender per vehicle
             //-
             lock (vehicleSenderList)
             {
-                VehicleWithSendQueue vehicleSender = vehicleSenderList.GetOrAdd(blobFilename.vehicleNumber, containerClient, ct);
+                VehicleWithSendQueue vehicleSender = vehicleSenderList.GetOrAdd(vehicle, containerClient, ct);
                 //-
                 //--- enqueue the blobitem to the vehicleSender
                 //-
                 vehicleSender.EnqueueBlobItemForDownload(blobItem);
             }
-
+            blobFilename = null;
         }
 
 

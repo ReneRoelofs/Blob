@@ -267,37 +267,7 @@ public class Payload
         }
     }
 
-    private Boolean SendGPSData(Boolean useTimeStampNow)
-    {
-        Boolean succesfull = true;
-        string sJson;
-        //+
-        //--- create and send GPS data
-        //-
-        if (vehicle.gpsData == null)
-        {
-            vehicle.gpsData = new GpsData();
-        }
-
-        if (lat != null && lon != null)
-        {
-            vehicle.gpsData.lat = (double)lat;
-            vehicle.gpsData.lon = (double)lon;
-            vehicle.gpsData.setTimestamp((DateTime)ts);
-            if (useTimeStampNow)
-            {
-                vehicle.gpsData.setTimestamp(DateTime.Now);
-            }
-        }
-        IRestResponse responsegps = vehicle.SendGPS();
-        if (Statics.DetailedContiLogging && responsegps.StatusCode != System.Net.HttpStatusCode.OK)
-        {
-            FeedbackResponse(vehicle.clientGps(), responsegps);
-        }
-        succesfull = responsegps.IsSuccessful && succesfull;
-        return succesfull;
-    }
-
+    
   
 
 
@@ -342,24 +312,7 @@ public class Payload
 
 
 
-    public void FeedbackResponse(RestClient client, IRestResponse response)
-    {
-        if (response.StatusCode != System.Net.HttpStatusCode.OK)
-        {
-            log.Warn("Feedback from WebClient:");
-            log.Warn("URL: " + client.BaseUrl);
-            log.Warn("error:   " + response.ErrorMessage);
-            log.Warn("content: " + response.Content);
-            log.Warn("status:  " + response.StatusCode);
-        }
-        else
-        {
-            log.Debug("URL: " + client.BaseUrl + " " + response.StatusCode);
-            //log.Debug("error:   " + response.ErrorMessage);
-            //log.Debug("content: " + response.Content);
-            //log.Debug("status:  " + response.StatusCode);
-        }
-    }
+   
 
     public class Raw
     {

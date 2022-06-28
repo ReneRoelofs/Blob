@@ -16,7 +16,7 @@ using Statics = FmsBlobToContinental.Statics;
 
 namespace Blob3
 {
- 
+
     public class VehicleSenderList : List<VehicleWithSendQueue>
     {
         Boolean useTimestampNow = false;
@@ -29,24 +29,82 @@ namespace Blob3
             }
         }
 
-        public VehicleWithSendQueue GetOrAdd(int vehicleNumber, BlobContainerClient containerClient, CancellationToken ct)
+        public TestProd _testProd = TestProd.Test;
+
+        /// <summary>
+        /// Get Testprod. 
+        /// Set Testprod en thus TestProd for all vehicles in this list.
+        /// </summary>
+        public TestProd TestProd
+        {
+            get
+            {
+                return _testProd;
+            }
+            set
+            {
+                _testProd = value;
+                foreach (VehicleWithSendQueue vehicleWithSendQueue in this)
+                {
+                    vehicleWithSendQueue.testProd = value;
+                }
+            }
+        }
+
+        //public VehicleWithSendQueue GetOrAdd(int vehicleNumber, BlobContainerClient containerClient, CancellationToken ct)
+        //{
+        //    lock (this)
+        //    {
+        //        VehicleWithSendQueue result = this.Find(V => V.vehicleNumber == vehicleNumber.ToString());
+        //        if (result == null)
+        //        {
+        //            result = new VehicleWithSendQueue(ct, this.TestProd)
+        //            {
+        //                vehicleNumber = vehicleNumber.ToString(),
+        //                containerClient = containerClient,
+        //                useTimestampNow = this.useTimestampNow
+        //            };
+        //            this.Add(result);
+        //        }
+        //        return result;
+        //    }
+        //}
+        public VehicleWithSendQueue GetOrAdd(CCVehicle vehicle, BlobContainerClient containerClient, CancellationToken ct)
         {
             lock (this)
             {
-                VehicleWithSendQueue result = this.Find(V => V.vehicleNumber == vehicleNumber.ToString());
+                VehicleWithSendQueue result = this.Find(V => V.vehicleNumber == vehicle.vehicleNumber.ToString());
                 if (result == null)
                 {
-                    result = new VehicleWithSendQueue(ct)
-                    {
-                        vehicleNumber = vehicleNumber.ToString(),
-                        containerClient = containerClient,
-                        useTimestampNow = this.useTimestampNow
-                    };
+                    result = new VehicleWithSendQueue(vehicle, containerClient,ct);
+                    result.useTimestampNow = this.useTimestampNow;
                     this.Add(result);
                 }
                 return result;
             }
         }
+
+        /*
+         * 
+            //+
+            //--- create a vehiclesender per vehicle is not known allready. 
+            //-
+            if (vehicleSenderList.Find(V => V.vehicleNumber == vehicle.vehicleNumber) == null)
+            {
+                lock (vehicleSenderList)
+                {
+                    VehicleWithSendQueue vehicleSender = (VehicleWithSendQueue)vehicle;
+                    vehicleSender.StartSenderTasks(ct);
+                    vehicleSender.testProd = this.TestProd;
+
+                    //VehicleWithSendQueue vehicleSender2 = vehicleSenderList.GetOrAdd(blobFilename.vehicleNumber, containerClient, ct);
+                    //-
+                    //--- enqueue the blobitem to the vehicleSender
+                    //-
+                    vehicleSender.EnqueueBlobItemForDownload(blobItem);
+                }
+            }
+        */
 
     }
 }

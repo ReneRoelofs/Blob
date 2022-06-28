@@ -68,6 +68,8 @@
     <Compile Include="CCVehicle.cs" />
     <Compile Include="CCVehicleList.cs" />
     <Compile Include="CCVehicleMD.cs" />
+    <Compile Include="CCSensorMasterData.cs" />
+    <Compile Include="CCSensorMasterDataList.cs" />
     <Compile Include="FMSEvent.cs" />
     <Compile Include="FMSEventList.cs" />
     <Compile Include="FMSEventTest.cs" />
@@ -78,6 +80,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Settings.cs" />
     <Compile Include="Statics.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -12,7 +12,7 @@ namespace FmsBlobToContinental.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.10.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.1.0.0")]
     public sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -38,24 +38,24 @@ namespace FmsBlobToContinental.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("Welcome2021")]
-        public string password {
+        public string passwordTest {
             get {
-                return ((string)(this["password"]));
+                return ((string)(this["passwordTest"]));
             }
             set {
-                this["password"] = value;
+                this["passwordTest"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("ArrivaNL_Test")]
-        public string username {
+        public string usernameTest {
             get {
-                return ((string)(this["username"]));
+                return ((string)(this["usernameTest"]));
             }
             set {
-                this["username"] = value;
+                this["usernameTest"] = value;
             }
         }
         
@@ -73,6 +73,18 @@ namespace FmsBlobToContinental.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute(@"eyJhbGciOiJQUzUxMiIsInppcCI6IkdaSVAifQ.H4sIAAAAAAAAAKtWKkgsKslLLVKyUnIsKsosS9T181HSUSouTUIW0Q0oyk8BCqdWFChZGZqbW5gYGBmbmNQCAOX1yHA_AAAA.bD_987vqSZpPmjefmfVD9iVjzpTwWxv5mfUaMB0890KGv6kOfRuW9iCBQD6mQLgv1gCYEkGKaHk7f-0fBK-pUEYoceGtiTGgtWhG6Icf-XQdd2fuAV5vTG_V7XUaVaINtZz5GxRVKcn6OX3Uhvz3RapTustkm_Rd43GoVNssoFeSlTl8PC4AuTTRiMETISZ6D3ioBxMTgW6iqoYKCxV2hfcBdreVnA94fWeElXoGGxibfw5OXsO-jIfbns7wju0SeEBn48O6PQmvQbfy3hT5pFHa2GFgIHGxzZLC6Aiv9SVnv3wvf9wLOG7LjKaUUC2-a1tkX4CfknM4oE3-l4RNhhBuAoBv3cjg2mv2tex1lq41rTsAcsBUQx91sK4ki91CWU2uqzJmBSk11s1_h1t9Dia1NNzQEMub-Bt59Aw3V0-7Y7Nl4gdG0KYnyFcViIqSG4CiLrU7eGGrPaaYwjKvHjdy3YsexTn0tuILmyGGO6MOEeOd2A4jFHMwdfq6k7Ppfd5CYrtbQwrERcowEXdICAVHLFpYVRYgBUd3Nq6gamjwoqirVav0MeMyosyI7mQGR_pqb6nLL5K4Z9z-u0zziw6Qa3FyPbXh2D7ZA1NEzo1K2tQZKdQ8gk9SlNQ11Rrw1Dcm8KufQtal0TESW-gp9adO78_67VTvwQKMU87Dth0")]
+        public string certificateStringProd {
+            get {
+                return ((string)(this["certificateStringProd"]));
+            }
+            set {
+                this["certificateStringProd"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("C:\\Klanten\\Arriva\\Blob3\\Data")]
         public string DataDir {
             get {
@@ -85,7 +97,7 @@ namespace FmsBlobToContinental.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("https://qa.c2tires.conti.de/")]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://c2tires.conti.de/")]
         public string hostNameProd {
             get {
                 return ((string)(this["hostNameProd"]));
@@ -97,13 +109,25 @@ namespace FmsBlobToContinental.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute(@"eyJhbGciOiJQUzUxMiIsInppcCI6IkdaSVAifQ.H4sIAAAAAAAAAKtWKkgsKslLLVKyUnIsKsosS9T181HSUSouTUIW0XVJLQOKplYUKFkZmptbmBgYGRla1AIAZwQ2oD4AAAA.CWkBDuUMuiDWpI2MLc465iDy9MumtLoQmbX41fbFEJmv_LFFTluEBaedViEd1eFQx_Kk5JQhC0s8G55eBTKdYie43tQ2fP5fJDfvBniF77AfjqYSXMWED1KS-KyPOJ7KWQKt3N0KfVEt5f6IQV5XbJzU2qKtylDOKzfwOBkrKrT0UCe13NjtHLmnDmIq3SiaXqcZAxrn_OFkqwLE4ot6VmLS7rZAwwHS1lN_oLfECeayJmH7Nynv1FwaRhvwESHoqnzZl-GNGoJa9ZpbM-4QzcCnsadq8CnoO64lzsz_Mf19vaOWMAQW6oKWvZV-CJfByp9MbRarYQrSPKUGxYoY7G5wUVSWXNcVMgYIqjMQ7m0O879NMzX6hnVigVIyUw0xskiRkuEp-xg91XtC7ghYSr5vY8kqA4JKyUJ8dhn3x2FVbVTMw1qq-ZeHml12D25keuZtkk3b1bVLjaN6pWif211TkGaPPb8ix2MnH58f6NaweO8M3HVRPrLlJ9Q_-Q4M-VBvsza6aEg0fcpVrF8pYzCaCI9lE3doyXIyi7eSRetW-jW0VWd61ycZ5GVvprDGubZ44y-MXJTZrCsFi7LgQXFWREUDy3O8AINXQMjiI7gfX4MO9JxyLNEYuXT-C1nKQcHvDX5hU50_FuCAzf5n7OT6CYKTuhO7SAyWh793jus")]
-        public string certificateStringProd {
+        [global::System.Configuration.DefaultSettingValueAttribute("arriva_nl2")]
+        public string passwordProd {
             get {
-                return ((string)(this["certificateStringProd"]));
+                return ((string)(this["passwordProd"]));
             }
             set {
-                this["certificateStringProd"] = value;
+                this["passwordProd"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Conti2021")]
+        public string usernameProd {
+            get {
+                return ((string)(this["usernameProd"]));
+            }
+            set {
+                this["usernameProd"] = value;
             }
         }
     }

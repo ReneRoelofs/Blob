@@ -127,6 +127,8 @@ namespace BlobTester
             this.bindingNavigatorMoveNextItem2 = new System.Windows.Forms.ToolStripButton();
             this.bindingNavigatorMoveLastItem2 = new System.Windows.Forms.ToolStripButton();
             this.bindingNavigatorSeparator7 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripButtonRefresh = new System.Windows.Forms.ToolStripButton();
             ((System.ComponentModel.ISupportInitialize)(this.bsPayload)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bsBlobFiles)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bsBlobItems)).BeginInit();
@@ -1045,6 +1047,7 @@ namespace BlobTester
             this.gcVehiclesAndSensors.TabIndex = 0;
             this.gcVehiclesAndSensors.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
             this.gvVehiclesAndSensors});
+            this.gcVehiclesAndSensors.Click += new System.EventHandler(this.gcVehiclesAndSensors_Click);
             // 
             // gvVehiclesAndSensors
             // 
@@ -1069,7 +1072,9 @@ namespace BlobTester
             this.bindingNavigatorMoveLastItem2,
             this.bindingNavigatorSeparator7,
             this.bindingNavigatorAddNewItem1,
-            this.bindingNavigatorDeleteItem1});
+            this.bindingNavigatorDeleteItem1,
+            this.toolStripLabel1,
+            this.toolStripButtonRefresh});
             this.bindingNavigator2.Location = new System.Drawing.Point(3, 3);
             this.bindingNavigator2.MoveFirstItem = this.bindingNavigatorMoveFirstItem2;
             this.bindingNavigator2.MoveLastItem = this.bindingNavigatorMoveLastItem2;
@@ -1165,6 +1170,25 @@ namespace BlobTester
             // 
             this.bindingNavigatorSeparator7.Name = "bindingNavigatorSeparator7";
             this.bindingNavigatorSeparator7.Size = new System.Drawing.Size(6, 25);
+            // 
+            // toolStripLabel1
+            // 
+            this.toolStripLabel1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripLabel1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripLabel1.Image")));
+            this.toolStripLabel1.Name = "toolStripLabel1";
+            this.toolStripLabel1.Size = new System.Drawing.Size(16, 22);
+            this.toolStripLabel1.Text = "xls";
+            this.toolStripLabel1.Click += new System.EventHandler(this.toolStripLabel1_Click_1);
+            // 
+            // toolStripButtonRefresh
+            // 
+            this.toolStripButtonRefresh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonRefresh.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonRefresh.Image")));
+            this.toolStripButtonRefresh.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButtonRefresh.Name = "toolStripButtonRefresh";
+            this.toolStripButtonRefresh.Size = new System.Drawing.Size(23, 22);
+            this.toolStripButtonRefresh.Text = "toolStripButton1";
+            this.toolStripButtonRefresh.Click += new System.EventHandler(this.toolStripButtonRefresh_Click);
             // 
             // BlobTestForm
             // 
@@ -1336,6 +1360,8 @@ namespace BlobTester
         private System.Windows.Forms.NumericUpDown spDays;
         private System.Windows.Forms.CheckBox cbDetailedDistributeLogging;
         private System.Windows.Forms.CheckBox cbDistributeLoop;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel1;
+        private System.Windows.Forms.ToolStripButton toolStripButtonRefresh;
     }
 }
 

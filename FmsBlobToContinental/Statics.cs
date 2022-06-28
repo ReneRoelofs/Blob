@@ -26,9 +26,11 @@ namespace FmsBlobToContinental
 #if !DEBUG
         static public int MinutesForIgnoreSensorDataAfterDeserializing = 20; // data only taken into account if more then 20 minutes has passed (per sensor)\
         static public int MinitesForIgnoreSensorDataBeforeDeserializing = 0; // even niet op voorhand al skippen.
+        static public int SendMDAtLeastEveryMinute = 480; // every 4 hours
 #else
         static public int MinutesForIgnoreSensorDataAfterDeserializing = 5; // data only taken into account if more then 20 minutes has passed (per sensor)
         static public int MinitesForIgnoreSensorDataBeforeDeserializing = 0; // even niet op voorhand al skippen.
+        static public int SendMDAtLeastEveryMinute = 5;
 #endif
 
         static public CleverIntList VehiclesShowingDownloadTrace = new CleverIntList();
@@ -53,6 +55,21 @@ resultTask = httpClient->PostAsync(state->httpRequest, httpContent);
         static public Boolean DetailedContiLogging = false;
         static public string DetailedContiLoggingFilter = "";
 
+
+        static public Boolean IsVehicleDebugged(string vehicleNumber)
+        {
+            if (Statics.DetailedContiLogging)
+            {
+
+                return (String.IsNullOrEmpty(DetailedContiLoggingFilter) || DetailedContiLoggingFilter.Contains(vehicleNumber));
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+
         static public Boolean ContiLoggingOnUpdates = true;
 
 
@@ -63,24 +80,35 @@ resultTask = httpClient->PostAsync(state->httpRequest, httpContent);
             {
                 if (_vehicleList == null)
                 {
-                    try
-                    {
-                        _vehicleList = RR_Serialize.Xml.FromXMLFile<VehicleList>(Path.Combine(Properties.Settings.Default.DataDir, "Vehicles.xml"));
-                    }
-                    catch
-                    {
-                        _vehicleList = new VehicleList();
-                    }
+                    ReloadVehicleList();
                 }
                 return _vehicleList;
+
             }
+        }
+
+        static public void ReloadVehicleList()
+        {
+            try
+            {
+                _vehicleList = RR_Serialize.Xml.FromXMLFile<VehicleList>(Path.Combine(Properties.Settings.Default.DataDir, "Vehicles.xml"));
+            }
+            catch
+            {
+                _vehicleList = new VehicleList();
+            }
+
         }
 
         public static void SaveVehicleList()
         {
-            lock (vehicleList)
+            if (_vehicleList != null)
             {
-                RR_Serialize.Xml.ToXMLFile<VehicleList>(Statics.vehicleList, Path.Combine(Properties.Settings.Default.DataDir, "Vehicles.xml"));
+                lock (_vehicleList)
+                {
+                    _vehicleList.Sort();
+                    RR_Serialize.Xml.ToXMLFile<VehicleList>(Statics.vehicleList, Path.Combine(Properties.Settings.Default.DataDir, "Vehicles.xml"));
+                }
             }
         }
 
@@ -374,6 +402,25 @@ resultTask = httpClient->PostAsync(state->httpRequest, httpContent);
 
         }
 
+        static public void FeedbackResponse(RestClient client, IRestResponse response)
+        {
+            if (response.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                log.Debug("Feedback from WebClient:");
+                log.Debug("URL: " + client.BaseUrl);
+                log.Debug("error:   " + response.ErrorMessage);
+                log.Debug("content: " + response.Content);
+                log.Debug("status:  " + response.StatusCode);
+            }
+            else
+            {
+                //log.Debug("Feedback from WebClient:");
+                //log.Debug("URL: " + client.BaseUrl);
+                //log.Debug("error:   " + response.ErrorMessage);
+                //log.Debug("content: " + response.Content);
+                //log.Debug("status:  " + response.StatusCode);
+            }
+        }
 
 
     }

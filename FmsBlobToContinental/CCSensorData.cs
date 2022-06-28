@@ -9,29 +9,6 @@ using System.Threading.Tasks;
 namespace FmsBlobToContinental
 {
 
-    public class SensorMasterData
-    {
-        /// <summary>
-        /// Graphical position of the sensor on the vehicle
-        /// </summary>
-        public string position;
-
-        /// <summary>
-        /// Recommended Pressure of the Tire in Pa.
-        /// </summary>
-        public double recommendedPressure = 875000;
-
-        /// <summary>
-        /// Numeric Sensor ID.
-        /// </summary>
-        public string ttmId;
-
-        public string Text()
-        {
-            return string.Format("pos={0} recomPres={1} ttmId={2}", position, recommendedPressure, ttmId);
-        }
-
-    }
 
     public class SensorData : CCBaseData
     {
@@ -145,8 +122,19 @@ namespace FmsBlobToContinental
         public string sid { get; set; }
 
         [JsonIgnore]
-        uint TTMID { get; set; }
+        public uint uSid { get; set; }
 
+        [JsonIgnore]
+        uint TTMID 
+        { 
+            get 
+            { 
+                return uSid; 
+            } 
+            set 
+            { uSid = value; 
+            } 
+        }
 
         [JsonIgnore]
         public uint systemId { get; set; }
