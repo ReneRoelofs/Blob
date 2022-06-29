@@ -199,7 +199,12 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
                 if (!append)
                 {
                     filesInPayloadList.Clear();
-                    payloadList = rootobject.payload.ToList().FindAll(p => p.HasSensorData);
+                    
+                    
+                 //   payloadList = rootobject.payload.ToList().FindAll(p => p.HasSensorData);
+                    payloadList = rootobject.payload.ToList();
+
+
                     filesInPayloadList.Add(fullPath);
 
                     foreach (Payload p in payloadList)

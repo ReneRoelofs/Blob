@@ -324,10 +324,10 @@
   </data>
   <data name="toolStripLabel1.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAACTSURBVDhPjY5LEoAwCEM5fM/Wa6FB06FAP4sMkiZPRFWHWmt6I99JAL9XQkas9u0iTYzKyQeo
-        8vlNyBTy4ejDs8JbnPU/Rkicvfch5DENwPIOwhJUAqAVBMEo5DCnC1iqIPShBFiFo8+/J0AsryDYvbYX
-        7CDpAiwUgn6PUHhXADx6RY/78YKdlgD/p5NKgJnXEn0Ak1B8KzcOiBcAAAAASUVORK5CYII=
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAJNJREFUOE+N
+        jksSgDAIQzl8z9ZroUHToUA/iwySJk9EVYdaa3oj30kAv1dCRqz27SJNjMrJB6jy+U3IFPLh6MOzwluc
+        9T9GSJy99yHkMQ3A8g7CElQCoBUEwSjkMKcLWKog9KEEWIWjz78nQCyvINi9thfsIOkCLBSCfo9QeFcA
+        PHpFj/vxgp2WAP+nk0qAmdcSfQCTUHwrNw6IFwAAAABJRU5ErkJggg==
 </value>
   </data>
   <data name="toolStripButtonRefresh.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
@@ -345,6 +345,6 @@
 </value>
   </data>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>307</value>
+    <value>95</value>
   </metadata>
 </root>

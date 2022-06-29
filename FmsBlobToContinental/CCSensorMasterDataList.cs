@@ -42,7 +42,7 @@ namespace FmsBlobToContinental
             TimeSpan ts = DateTime.Now.Subtract(ResendTimeStamp);
             if (ts.TotalMinutes > Statics.SendMDAtLeastEveryMinute && EnoughSensors()) // elke zoveel minuten
             {
-                resendReason = String.Format("Refresh was {0:0} ", ts.TotalMinutes);
+                resendReason = String.Format("Refresh was {0:0} min ago ", ts.TotalMinutes);
                 _needsResending = true;
             }
             return _needsResending;
@@ -66,11 +66,7 @@ namespace FmsBlobToContinental
                 //--- sensor met dit ID is niet gevonden.
                 //--- gooi zonodig sensor op hetzelfde positie weg
                 //-
-                SensorMasterData positionResult = this.theList.Find(S => S.position == graphicalPosition);
-                if (positionResult != null)
-                {
-                    this.theList.Remove(positionResult);
-                }
+                RemoveSensor(graphicalPosition);
                 //+
                 //--- nieuwe sensor toevoegen.
                 //-
@@ -93,6 +89,36 @@ namespace FmsBlobToContinental
                 somethingChanged = true;
             }
             return result;
+        }
+
+        /// <summary>
+        /// Remove the sensor from the list if it exists
+        /// </summary>
+        /// <param name="sid"></param>
+        /// <param name="graphicalPosition"></param>
+        public SensorMasterData RemoveSensor(string graphicalPosition)
+        {
+            SensorMasterData sensor = this.theList.Find(S => S.position == graphicalPosition);
+            if (sensor != null)
+            {
+                this.theList.Remove(sensor);
+            }
+            return sensor;
+        }
+
+        /// <summary>
+        /// Remove the sensor from the list if it exists
+        /// </summary>
+        /// <param name="sid"></param>
+        /// <param name="graphicalPosition"></param>
+        public SensorMasterData RemoveSensor(uint sid)
+        {
+            SensorMasterData sensor = this.theList.Find(S => S.ttmId == sid);
+            if (sensor != null)
+            {
+                this.theList.Remove(sensor);
+            }
+            return sensor;
         }
 
 

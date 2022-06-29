@@ -30,7 +30,7 @@ namespace FmsBlobToContinental
 #else
         static public int MinutesForIgnoreSensorDataAfterDeserializing = 5; // data only taken into account if more then 20 minutes has passed (per sensor)
         static public int MinitesForIgnoreSensorDataBeforeDeserializing = 0; // even niet op voorhand al skippen.
-        static public int SendMDAtLeastEveryMinute = 5;
+        static public int SendMDAtLeastEveryMinute = 480;
 #endif
 
         static public CleverIntList VehiclesShowingDownloadTrace = new CleverIntList();
@@ -109,6 +109,26 @@ resultTask = httpClient->PostAsync(state->httpRequest, httpContent);
                     _vehicleList.Sort();
                     RR_Serialize.Xml.ToXMLFile<VehicleList>(Statics.vehicleList, Path.Combine(Properties.Settings.Default.DataDir, "Vehicles.xml"));
                 }
+            }
+        }
+
+        /// <summary>
+        /// The sensor with id sid is found in the specified vehicle, 
+        /// So remove it from any other vehicle.
+        /// </summary>
+        /// <param name="vehicle"></param>
+        /// <param name="sid"></param>
+        public static void SensorFoundInVehicle(CCVehicle vehicle, uint sid, string graphicalPosition)
+        {
+            foreach (CCVehicle thisVehicle in vehicleList.FindAll(V => V != vehicle))
+            {
+                SensorMasterData oldResult = thisVehicle.sensorsMasterDataList.RemoveSensor(sid);
+                if (oldResult != null)
+                {
+                    log.InfoFormat("Sensor {0} {1} was found in vehicle {2}.{3} but is now in vehicle {4}.{5}",
+                        oldResult.ttmId, oldResult.hexId, thisVehicle.iVehicleNumber, oldResult.position, vehicle.iVehicleNumber, graphicalPosition);
+                }
+
             }
         }
 

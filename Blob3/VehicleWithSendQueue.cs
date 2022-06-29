@@ -240,8 +240,8 @@ namespace Blob3
 
                 Boolean ok = true;
 
-                List<Payload> payloadList = rootobject.payload.ToList().FindAll(P => P.HasSensorData && P.HasPressureInfo());
-                //List<Payload> payloadList = rootobject.payload.ToList(); //  niet alleeh HasPressure want we willen ook gps data  // .FindAll(P => P.HasSensorData && P.HasPressureInfo());
+             //   List<Payload> payloadListWithPressure = rootobject.payload.ToList().FindAll(P => P.HasSensorData && P.HasPressureInfo());
+                List<Payload> payloadList = rootobject.payload.ToList(); //  niet alleeh HasPressure want we willen ook gps data  // .FindAll(P => P.HasSensorData && P.HasPressureInfo());
 
                 //+
                 //--- Get every payload (having sensordata) update now if change or alarm detected.
@@ -407,7 +407,11 @@ namespace Blob3
             //-
             if (vehicle.gpsData != null)
             {
-                SendGPSData(useTimeStampNow, sensorData.timestamp, vehicle.gpsData.lat, vehicle.gpsData.lon);
+                SendGPSData(useTimeStampNow);
+            }
+            else
+            {
+                log.DebugFormat("Veh={0,4} GPS unknown ",vehicleNumber);
             }
 
 
@@ -440,8 +444,8 @@ namespace Blob3
             if (response.IsSuccessful)
             {
                 vehicle.UpdateSimpleInfo(sensorData.location, sensorData.sidHex, sensorData.timestamp, sensorData.temperature, sensorData.pressure);
-                log.DebugFormat("Mem={0} Veh={1,4} Loc={2,2} Time={3} Url={4} SensorHex={5} Status={6} Why={7,4} ",
-                    RR.Lib.MemoryUsageStringShort(),
+                log.DebugFormat("Veh={0,4} Loc={1,2} Time={2} Url={3} SensorHex={4} Status={5} Why={6,4} ",
+                    //RR.Lib.MemoryUsageStringShort(),
                     this.vehicleNumber,
                     sensorData.location,
                     sensorData.timestamp,
@@ -559,11 +563,25 @@ namespace Blob3
                 vehicle.gpsData.setTimestamp(DateTime.Now);
             }
             IRestResponse responsegps = vehicle.SendGPS();
+            succesfull = responsegps.IsSuccessful && succesfull;
+
+            if (responsegps.IsSuccessful)
+            {
+                log.DebugFormat("Veh={0,4} GPS ({1:0.00},{2:0.00}) {3} send {4} ",
+                  this.vehicleNumber,
+                  vehicle.gpsData.lat, vehicle.gpsData.lon,vehicle.gpsData.timestamp, responsegps.StatusCode.ToString());
+            }            
+            else
+            {
+                log.WarnFormat("Veh={0,4} GPS ({1:0.00},{2:0.00}) {3} send {4} {5} {6}",
+                  this.vehicleNumber,
+                  vehicle.gpsData.lat, vehicle.gpsData.lon, vehicle.gpsData.timestamp, responsegps.StatusCode.ToString(), responsegps.ErrorMessage, responsegps.ResponseUri);
+            }
             if (Statics.DetailedContiLogging && responsegps.StatusCode != System.Net.HttpStatusCode.OK)
             {
                 Statics.FeedbackResponse(vehicle.clientGps(), responsegps);
             }
-            succesfull = responsegps.IsSuccessful && succesfull;
+
             return succesfull;
         }
 

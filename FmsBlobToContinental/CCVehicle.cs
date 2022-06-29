@@ -134,7 +134,12 @@ namespace FmsBlobToContinental
         /// <returns></returns>
         public SensorMasterData GetOrAddSensorMasterData(uint sid, string graphicalPosition)
         {
-            return sensorsMasterDataList.GetOrAddSensorMasterData(sid, graphicalPosition, out Boolean somethingChanged);
+            SensorMasterData result= sensorsMasterDataList.GetOrAddSensorMasterData(sid, graphicalPosition, out Boolean somethingChanged);
+            if (somethingChanged)
+            {
+                Statics.SensorFoundInVehicle(this, sid, graphicalPosition);
+            }
+            return result;
         }
 
         public void SetLatLon(double? lat, double? lon, DateTime? ts)
