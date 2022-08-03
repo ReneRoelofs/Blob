@@ -135,8 +135,13 @@ namespace FmsBlobToContinental
 
         }
 
-        public IRestResponse SendMD()
+        public IRestResponse SendMD(Boolean alwaysLog = false, string updateReason = "")
         {
+            if (updateReason != "")
+            {
+                this.resendReason = updateReason;
+            }
+
             var request = new CCRestRequest(Method.PUT, vehicle.testProd);
             theList.Sort();
             VehicleMD vehicleMd = new VehicleMD();
@@ -160,7 +165,7 @@ namespace FmsBlobToContinental
                 IRestResponse response = clientMd().Execute(request);
                 _needsResending = false;
 
-                if (Statics.DetailedContiLogging)
+                if (Statics.DetailedContiLogging || alwaysLog)
                 {
                     log.InfoFormat("Veh={0,4} MasterDataUpdate ccuId={1} Url={2} Status={3} ResendReason={4}",
                         vehicle.vehicleNumber,
@@ -178,7 +183,7 @@ namespace FmsBlobToContinental
                     }
                     else
                     {
-                        log.Info("SUCCES: " + sJson);
+                        log.InfoFormat("SUCCES Veh={0}:{1} ",vehicle.vehicleNumber, sJson);
                     }
 
 

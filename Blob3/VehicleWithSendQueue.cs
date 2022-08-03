@@ -118,6 +118,11 @@ namespace Blob3
         /// </summary>
         private Boolean UpdateFailedRecently()
         {
+            //Even proberen door te rammen
+            //
+            //return false;
+
+
             if (DateTime.Now.Subtract(updateFailed).TotalMinutes > RetryAfterFail)
             {
                 updateFailed = DateTime.MinValue;
@@ -478,11 +483,17 @@ namespace Blob3
                 if (Statics.DetailedContiLogging)
                 {
                     Statics.FeedbackResponse(client, response);
-                    log.DebugFormat("                Json={0}",
+                    log.DebugFormat("Veh={0,4} Json={0}",
                         sJson.Replace("\r\n", ""));
-                    log.DebugFormat("                Text={0}",
+                    log.DebugFormat("Veh={0,4} Text={0}",
                         sensorData.Text());
                     //FeedbackResponse(client, response);
+                }
+                if (response.Content.Contains("The sensorID is not assigned to a vehicle"))
+                {
+                    string resendMDReason = string.Format("Resend MD for Veh={0} because The sensorID SensorHex={1} is not assigned to a vehicle",
+                           this.vehicleNumber, sensorData.sidHex);
+                    vehicle.SendMD(alwaysLog: true, resendMDReason);
                 }
             }
             return response.IsSuccessful;

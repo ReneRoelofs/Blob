@@ -87,7 +87,7 @@ namespace FmsBlobToContinental
         /// </summary>
         public CCVehicle()
         {
-          
+            sensorsMasterDataList = new SensorMasterDataList(this);
         }
 
         public CCVehicle(string vehicleNumber = "0000", TestProd testProd = TestProd.Prod)
@@ -188,13 +188,13 @@ namespace FmsBlobToContinental
             return response;
         }
 
-        public IRestResponse SendMD()
+        public IRestResponse SendMD(Boolean alwaysLog = false, string updateReason = "")
         {
             if (sensorsMasterDataList.vehicle == null)
             {
                 sensorsMasterDataList.vehicle = this;
             }
-            IRestResponse result = sensorsMasterDataList.SendMD();
+            IRestResponse result = sensorsMasterDataList.SendMD(alwaysLog, updateReason);
             return result;
         }
 
