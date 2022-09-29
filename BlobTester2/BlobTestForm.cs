@@ -3,6 +3,7 @@ using Azure.Storage.Blobs.Models;
 using Blob3;
 using BlobHandler;
 using DevExpress.XtraGrid.Columns;
+using DevExpress.XtraGrid.Views.Grid;
 using FmsBlobToContinental;
 using RestSharp;
 using System;
@@ -1019,6 +1020,27 @@ SharedAccessSignature=sv=2015-04-05&sr=b&si=tutorial-policy-635959936145100803&s
             FmsBlobToContinental.Statics.ReloadVehicleList();
             bsVehiclesAndSensors.DataSource = FmsBlobToContinental.Statics.vehicleList;
             gcVehiclesAndSensors.RefreshDataSource();
+        }
+
+        private void gvVehiclesAndSensors_CustomDrawCell(object sender, DevExpress.XtraGrid.Views.Base.RowCellCustomDrawEventArgs e)
+        {
+            if (e.Column.FieldName == "timestampSendToContinental")
+            {
+                GridView view = sender as GridView;
+                var row = view.GetRow(e.RowHandle);
+                if (row is CCVehicle)
+                {
+                    CCVehicle vehicle = (CCVehicle)row;
+                    if (!vehicle.IsUpToDate)
+                    {
+                        e.Appearance.ForeColor = Color.Red;
+                    }
+                }
+
+            }
+            //if (DoHighlight(e.Column.Name) || DoSuppressZero(e.Column.Name) || DoSuppressZeroLocalTime(e.Column.Name))
+
+
         }
     }
 }

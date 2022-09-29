@@ -80,6 +80,14 @@ namespace FmsBlobToContinental
         public DateTime timestampSendToContinental { get; set; } = DateTime.MinValue;
         public DateTime timestampFileSeen { get; set; } = DateTime.MinValue;
 
+        public Boolean IsUpToDate
+        {
+            get
+            {
+                return timestampSendToContinental >= DateTime.Now.AddDays(-4);
+            }
+        }
+
         public List<SimpleSensorInfo> simpleSensorInfo = new List<SimpleSensorInfo>();
 
         /// <summary>
@@ -98,6 +106,7 @@ namespace FmsBlobToContinental
             sensorsMasterDataList = new SensorMasterDataList(this);
         }
 
+        
 
         public string P0 { get { return SensorOnPosition(0); } }
         public string P1 { get { return SensorOnPosition(1); } }
@@ -114,7 +123,7 @@ namespace FmsBlobToContinental
             {
                 string time = string.Format("{0:HH:mm}", si.Updated);
                 string date = string.Format("{0:dd-MM}", si.Updated);
-                if (si.Updated.Date == this.timestampSendToContinental.Date)
+                if (si.Updated.Date == this.timestampFileSeen.Date)
                 {
                     date = "";
                 }
